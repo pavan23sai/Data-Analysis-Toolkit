@@ -10,6 +10,9 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
+  ScatterChart,
+  Scatter,
+  ZAxis,
 } from 'recharts';
 import {
   Card,
@@ -41,12 +44,15 @@ import {
   Hash,
   TrendingUp,
   AlertTriangle,
+  GitCompare,
 } from 'lucide-react';
 import { useDataset } from '@/hooks/useDataset';
 import {
   computeColumnSummary,
   histogramData,
   detectOutliersIQR,
+  correlation,
+  confidenceIntervalMean,
   type ColumnSummary,
 } from '@/lib/statistics';
 
@@ -296,6 +302,8 @@ export default function DescriptiveStatistics() {
 
   const [selectedNumericCol, setSelectedNumericCol] = useState<string>('');
   const [selectedCategoricalCol, setSelectedCategoricalCol] = useState<string>('');
+  const [scatterXCol, setScatterXCol] = useState<string>('');
+  const [scatterYCol, setScatterYCol] = useState<string>('');
 
   // Auto-select first numeric column
   const activeNumericCol =
@@ -344,6 +352,89 @@ export default function DescriptiveStatistics() {
       .map(([category, count]) => ({ category, count }))
       .sort((a, b) => b.count - a.count);
   }, [activeCategoricalCol, dataset, getCategoricalData]);
+
+  // Correlation matrix
+  const correlationMatrix = useMemo(() => {
+    if (numericColumns.length < 2) return { cols: [] as string[], matrix: [] as number[][] };
+    const cols = numericColumns;
+    const matrix: number[][] = [];
+    const colDataMap = new Map<string, number[]>();
+    cols.forEach((col) => colDataMap.set(col, getColumnData(col)));
+    for (let i = 0; i < cols.length; i++) {
+      const row: number[] = [];
+      for (let j = 0; j < cols.length; j++) {
+        if (i === j) {
+          row.push(1);
+        } else {
+          const xData = colDataMap.get(cols[i])!;
+          const yData = colDataMap.get(cols[j])!;
+          row.push(correlation(xData, yData));
+        }
+      }
+      matrix.push(row);
+    }
+    return { cols, matrix };
+  }, [numericColumns, dataset, getColumnData]);
+
+  // Scatter plot data
+  const activeScatterXCol =
+    scatterXCol && numericColumns.includes(scatterXCol) ? scatterXCol : numericColumns[0] || '';
+  const activeScatterYCol =
+    scatterYCol && numericColumns.includes(scatterYCol) ? scatterYCol : numericColumns[1] || numericColumns[0] || '';
+
+  const scatterData = useMemo(() => {
+    if (!activeScatterXCol || !activeScatterYCol || !dataset) return [];
+    const xData = getColumnData(activeScatterXCol);
+    const yData = getColumnData(activeScatterYCol);
+    const n = Math.min(xData.length, yData.length);
+    return Array.from({ length: n }, (_, i) => ({
+      x: xData[i],
+      y: yData[i],
+    }));
+  }, [activeScatterXCol, activeScatterYCol, dataset, getColumnData]);
+
+  // Correlation summary (strongest positive & negative)
+  const correlationSummary = useMemo(() => {
+    const { cols, matrix } = correlationMatrix;
+    if (cols.length < 2) return null;
+    let strongestPositive = { i: -1, j: -1, value: -Infinity };
+    let strongestNegative = { i: -1, j: -1, value: Infinity };
+    for (let i = 0; i < cols.length; i++) {
+      for (let j = i + 1; j < cols.length; j++) {
+        const val = matrix[i][j];
+        if (val > strongestPositive.value) {
+          strongestPositive = { i, j, value: val };
+        }
+        if (val < strongestNegative.value) {
+          strongestNegative = { i, j, value: val };
+        }
+      }
+    }
+    return {
+      strongestPositive: {
+        col1: cols[strongestPositive.i],
+        col2: cols[strongestPositive.j],
+        value: strongestPositive.value,
+      },
+      strongestNegative: {
+        col1: cols[strongestNegative.i],
+        col2: cols[strongestNegative.j],
+        value: strongestNegative.value,
+      },
+    };
+  }, [correlationMatrix]);
+
+  // Confidence intervals for each numeric column
+  const confidenceIntervals = useMemo(() => {
+    if (numericColumns.length === 0 || !dataset) return [];
+    return numericColumns.map((col) => {
+      const data = getColumnData(col);
+      if (data.length < 2) {
+        return { column: col, mean: NaN, lower: NaN, upper: NaN, marginOfError: NaN, standardError: NaN };
+      }
+      return { column: col, ...confidenceIntervalMean(data, 0.95) };
+    });
+  }, [numericColumns, dataset, getColumnData]);
 
   if (!dataset) {
     return (
@@ -709,6 +800,314 @@ export default function DescriptiveStatistics() {
                 Showing top 20 of {categoricalFrequency.length} categories
               </p>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Correlation Analysis */}
+      {correlationMatrix.cols.length >= 2 && (
+        <div className="space-y-6">
+          {/* Correlation Matrix Heatmap */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <GitCompare className="h-4 w-4 text-teal-600 shrink-0" />
+                Correlation Matrix
+              </CardTitle>
+              <CardDescription>
+                Pearson correlation coefficients between all numeric columns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <div className="min-w-fit">
+                  {/* Header row */}
+                  <div className="flex">
+                    <div className="w-24 shrink-0" />
+                    {correlationMatrix.cols.map((col) => (
+                      <div
+                        key={`header-${col}`}
+                        className="w-20 shrink-0 text-center text-xs font-medium text-muted-foreground truncate px-1"
+                        title={col}
+                      >
+                        {col.length > 10 ? col.substring(0, 10) + '…' : col}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Data rows */}
+                  {correlationMatrix.matrix.map((row, i) => (
+                    <div key={`row-${i}`} className="flex items-center">
+                      <div
+                        className="w-24 shrink-0 text-xs font-medium text-muted-foreground truncate pr-2 text-right"
+                        title={correlationMatrix.cols[i]}
+                      >
+                        {correlationMatrix.cols[i].length > 12
+                          ? correlationMatrix.cols[i].substring(0, 12) + '…'
+                          : correlationMatrix.cols[i]}
+                      </div>
+                      {row.map((val, j) => {
+                        const absVal = Math.abs(val);
+                        let cellClass = '';
+                        let textClass = '';
+                        if (val > 0.7) {
+                          cellClass = 'bg-emerald-500 dark:bg-emerald-600';
+                          textClass = 'text-white';
+                        } else if (val > 0.3) {
+                          cellClass = 'bg-emerald-300 dark:bg-emerald-400';
+                          textClass = 'text-emerald-900 dark:text-emerald-950';
+                        } else if (val > -0.3) {
+                          cellClass = 'bg-slate-200 dark:bg-slate-700';
+                          textClass = 'text-slate-700 dark:text-slate-200';
+                        } else if (val > -0.7) {
+                          cellClass = 'bg-rose-300 dark:bg-rose-400';
+                          textClass = 'text-rose-900 dark:text-rose-950';
+                        } else {
+                          cellClass = 'bg-rose-500 dark:bg-rose-600';
+                          textClass = 'text-white';
+                        }
+                        return (
+                          <div
+                            key={`cell-${i}-${j}`}
+                            className={`w-20 shrink-0 h-10 flex items-center justify-center text-xs font-mono font-semibold rounded-sm mx-0.5 my-0.5 ${cellClass} ${textClass}`}
+                            title={`${correlationMatrix.cols[i]} × ${correlationMatrix.cols[j]}: ${formatNumber(val)}`}
+                          >
+                            {absVal >= 0.01 ? formatNumber(val, 2) : '0.00'}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-3 mt-4 text-xs text-muted-foreground justify-center">
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block w-3 h-3 rounded-sm bg-emerald-500" />
+                      Strong positive (&gt;0.7)
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block w-3 h-3 rounded-sm bg-emerald-300" />
+                      Moderate positive (0.3–0.7)
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block w-3 h-3 rounded-sm bg-slate-200 dark:bg-slate-700" />
+                      Weak (−0.3 to 0.3)
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block w-3 h-3 rounded-sm bg-rose-300" />
+                      Moderate negative (−0.7 to −0.3)
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block w-3 h-3 rounded-sm bg-rose-500" />
+                      Strong negative (&lt;−0.7)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Scatter Plot */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <GitCompare className="h-4 w-4 text-emerald-600 shrink-0" />
+                Scatter Plot
+              </CardTitle>
+              <CardDescription>
+                Visualize the relationship between two numeric columns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground whitespace-nowrap">X Axis</label>
+                  <Select value={activeScatterXCol} onValueChange={setScatterXCol}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Select X column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {numericColumns.map((col) => (
+                        <SelectItem key={col} value={col}>
+                          {col}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground whitespace-nowrap">Y Axis</label>
+                  <Select value={activeScatterYCol} onValueChange={setScatterYCol}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Select Y column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {numericColumns.map((col) => (
+                        <SelectItem key={col} value={col}>
+                          {col}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {activeScatterXCol && activeScatterYCol && activeScatterXCol !== activeScatterYCol && (
+                  <Badge variant="secondary" className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300 whitespace-nowrap">
+                    r = {formatNumber(
+                      correlation(getColumnData(activeScatterXCol), getColumnData(activeScatterYCol)),
+                      3
+                    )}
+                  </Badge>
+                )}
+              </div>
+              {scatterData.length > 0 ? (
+                <div className="h-[320px] sm:h-[380px] w-full overflow-hidden">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis
+                        type="number"
+                        dataKey="x"
+                        name={activeScatterXCol}
+                        tick={{ fontSize: 11 }}
+                        tickFormatter={(val: number) => formatNumber(val, 1)}
+                        label={{
+                          value: activeScatterXCol,
+                          position: 'insideBottom',
+                          offset: -10,
+                          style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
+                        }}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey="y"
+                        name={activeScatterYCol}
+                        tick={{ fontSize: 11 }}
+                        tickFormatter={(val: number) => formatNumber(val, 1)}
+                        label={{
+                          value: activeScatterYCol,
+                          angle: -90,
+                          position: 'insideLeft',
+                          offset: 5,
+                          style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
+                        }}
+                      />
+                      <ZAxis range={[30, 30]} />
+                      <Tooltip
+                        formatter={(value: number, name: string) => [formatNumber(value, 3), name === 'x' ? activeScatterXCol : activeScatterYCol]}
+                        labelFormatter={() => ''}
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: '1px solid hsl(var(--border))',
+                          backgroundColor: 'hsl(var(--card))',
+                          color: 'hsl(var(--card-foreground))',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Scatter
+                        data={scatterData}
+                        fill={COLORS.teal}
+                        fillOpacity={0.7}
+                        stroke={COLORS.emerald}
+                        strokeWidth={1}
+                      />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <GitCompare className="h-8 w-8 mb-2 opacity-40" />
+                  <p className="text-sm">No data available for the selected columns.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Correlation Summary */}
+          {correlationSummary && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TrendingUp className="h-4 w-4 text-teal-600 shrink-0" />
+                  Correlation Summary
+                </CardTitle>
+                <CardDescription>
+                  Strongest correlations found between column pairs
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="rounded-lg border bg-emerald-50/50 dark:bg-emerald-900/10 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                        Strongest Positive
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      {correlationSummary.strongestPositive.col1} × {correlationSummary.strongestPositive.col2}
+                    </p>
+                    <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                      r = {formatNumber(correlationSummary.strongestPositive.value, 4)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-rose-50/50 dark:bg-rose-900/10 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-4 w-4 text-rose-600 rotate-180" />
+                      <span className="text-sm font-semibold text-rose-700 dark:text-rose-400">
+                        Strongest Negative
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      {correlationSummary.strongestNegative.col1} × {correlationSummary.strongestNegative.col2}
+                    </p>
+                    <p className="text-lg font-bold font-mono text-rose-600 dark:text-rose-400">
+                      r = {formatNumber(correlationSummary.strongestNegative.value, 4)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Confidence Intervals */}
+      {confidenceIntervals.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <GitCompare className="h-4 w-4 text-cyan-600 shrink-0" />
+              95% Confidence Intervals for the Mean
+            </CardTitle>
+            <CardDescription>
+              Interval estimates for the population mean of each numeric column
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[100px]">Column</TableHead>
+                    <TableHead className="text-right">Mean</TableHead>
+                    <TableHead className="text-right">Lower</TableHead>
+                    <TableHead className="text-right">Upper</TableHead>
+                    <TableHead className="text-right">Margin of Error</TableHead>
+                    <TableHead className="text-right">Standard Error</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {confidenceIntervals.map((ci) => (
+                    <TableRow key={ci.column}>
+                      <TableCell className="font-medium">{ci.column}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(ci.mean, 4)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(ci.lower, 4)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(ci.upper, 4)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(ci.marginOfError, 4)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatNumber(ci.standardError, 4)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </CardContent>
         </Card>
       )}

@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import Papa from 'papaparse';
-import { Upload, FileSpreadsheet, Download, Database, Rows3, Columns3, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, Download, Database, Rows3, Columns3, X, Info, ShieldCheck, TrendingUp, Hash, Type, Gauge } from 'lucide-react';
 import { useDataset, type Dataset } from '@/hooks/useDataset';
 import {
   Card,
@@ -22,6 +22,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Sample dataset: student scores
 const SAMPLE_DATA: Dataset = {
@@ -123,11 +130,103 @@ function exportDatasetToCSV(dataset: Dataset) {
   URL.revokeObjectURL(url);
 }
 
+// Circular Progress Ring Component
+function QualityRing({ score, size = 80 }: { score: number; size?: number }) {
+  const strokeWidth = 6;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+
+  const getColor = (s: number) => {
+    if (s >= 80) return { stroke: '#10b981', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' };
+    if (s >= 60) return { stroke: '#f59e0b', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' };
+    return { stroke: '#ef4444', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-950/30' };
+  };
+  const color = getColor(score);
+
+  return (
+    <div className={`relative inline-flex items-center justify-center rounded-full ${color.bg} p-2`}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-slate-200 dark:text-slate-700"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color.stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-700 ease-out"
+        />
+      </svg>
+      <span className={`absolute text-lg font-bold ${color.text}`}>
+        {Math.round(score)}
+      </span>
+    </div>
+  );
+}
+
+// Mini sparkline-style horizontal bar for column stats
+function ColumnStatBar({ label, min, max, mean, isNumeric }: {
+  label: string;
+  min: number;
+  max: number;
+  mean: number;
+  isNumeric: boolean;
+}) {
+  const range = max - min || 1;
+  const meanPos = ((mean - min) / range) * 100;
+
+  return (
+    <div className="flex items-center gap-3 py-1.5">
+      <span className="text-xs font-medium text-foreground w-28 sm:w-36 truncate shrink-0" title={label}>
+        {label}
+      </span>
+      <div className="flex-1 flex items-center gap-2">
+        {isNumeric ? (
+          <>
+            <span className="text-[10px] text-muted-foreground w-10 text-right shrink-0 tabular-nums">
+              {typeof min === 'number' && isFinite(min) ? min.toFixed(1) : '-'}
+            </span>
+            <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full relative overflow-hidden">
+              <div
+                className="absolute left-0 top-0 h-full bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(0, meanPos))}%` }}
+              />
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-amber-500 border border-white dark:border-slate-900 shadow-sm"
+                style={{ left: `${Math.min(98, Math.max(1, meanPos))}%` }}
+                title={`Mean: ${mean.toFixed(2)}`}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground w-10 shrink-0 tabular-nums">
+              {typeof max === 'number' && isFinite(max) ? max.toFixed(1) : '-'}
+            </span>
+          </>
+        ) : (
+          <span className="text-[10px] text-muted-foreground italic">Categorical</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function DataUpload() {
   const { dataset, setDataset } = useDataset();
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fileInfo, setFileInfo] = useState<{ size: string; lastModified: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(async (file: File) => {
@@ -137,6 +236,16 @@ export default function DataUpload() {
     }
     setError(null);
     setIsProcessing(true);
+    // Store file info
+    const sizeBytes = file.size;
+    const sizeStr = sizeBytes < 1024 ? `${sizeBytes} B`
+      : sizeBytes < 1024 * 1024 ? `${(sizeBytes / 1024).toFixed(1)} KB`
+      : `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+    const lastMod = file.lastModified
+      ? new Date(file.lastModified).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : 'Unknown';
+    setFileInfo({ size: sizeStr, lastModified: lastMod });
+
     try {
       const parsed = await parseCSVToDataset(file);
       if (parsed.headers.length === 0 || parsed.rows.length === 0) {
@@ -185,6 +294,7 @@ export default function DataUpload() {
 
   const handleLoadSample = useCallback(() => {
     setError(null);
+    setFileInfo({ size: '1.2 KB', lastModified: 'Sample Data' });
     setDataset(SAMPLE_DATA);
   }, [setDataset]);
 
@@ -197,14 +307,112 @@ export default function DataUpload() {
   const handleClear = useCallback(() => {
     setDataset(null);
     setError(null);
+    setFileInfo(null);
   }, [setDataset]);
 
   const previewRows = dataset ? dataset.rows.slice(0, 10) : [];
 
+  // ===== Data Quality Score =====
+  const qualityScore = useMemo(() => {
+    if (!dataset || dataset.rows.length === 0) return null;
+
+    const totalCells = dataset.rows.length * dataset.headers.length;
+
+    // Missing values
+    let missingCount = 0;
+    dataset.rows.forEach(row => {
+      row.forEach(cell => {
+        if (cell === null || cell === undefined || cell === '' || (typeof cell === 'number' && isNaN(cell))) {
+          missingCount++;
+        }
+      });
+    });
+    const missingPct = (missingCount / totalCells) * 100;
+
+    // Duplicates
+    const seen = new Map<string, number>();
+    dataset.rows.forEach(row => {
+      const key = JSON.stringify(row);
+      seen.set(key, (seen.get(key) || 0) + 1);
+    });
+    const dupCount = [...seen.values()].reduce((sum, count) => sum + (count > 1 ? count - 1 : 0), 0);
+    const dupPct = (dupCount / dataset.rows.length) * 100;
+
+    // Data type consistency: for each column, check if non-null values are consistent type
+    let consistentCols = 0;
+    dataset.headers.forEach((_, idx) => {
+      const values = dataset.rows.map(r => r[idx]).filter(v => v !== null && v !== undefined && v !== '');
+      if (values.length === 0) { consistentCols++; return; }
+      const numericCount = values.filter(v => typeof v === 'number' || (!isNaN(Number(v)))).length;
+      const isMostlyNumeric = numericCount > values.length * 0.8;
+      const isMostlyString = numericCount < values.length * 0.2;
+      if (isMostlyNumeric || isMostlyString) consistentCols++;
+    });
+    const consistencyPct = (consistentCols / dataset.headers.length) * 100;
+
+    // Overall score: weighted average (missing: 40%, dup: 30%, consistency: 30%)
+    const score = (100 - missingPct) * 0.4 + (100 - dupPct) * 0.3 + consistencyPct * 0.3;
+
+    return {
+      score: Math.max(0, Math.min(100, score)),
+      missingPct: Math.round(missingPct * 10) / 10,
+      dupPct: Math.round(dupPct * 10) / 10,
+      consistencyPct: Math.round(consistencyPct * 10) / 10,
+      missingCount,
+      dupCount,
+      totalCells,
+    };
+  }, [dataset]);
+
+  // ===== Quick Stats =====
+  const quickStats = useMemo(() => {
+    if (!dataset || dataset.rows.length === 0) return null;
+
+    const totalCells = dataset.rows.length * dataset.headers.length;
+    let numericCells = 0;
+    let categoricalCells = 0;
+
+    dataset.rows.forEach(row => {
+      row.forEach(cell => {
+        if (cell === null || cell === undefined || cell === '') return;
+        if (typeof cell === 'number' || (!isNaN(Number(cell)) && cell !== '')) {
+          numericCells++;
+        } else {
+          categoricalCells++;
+        }
+      });
+    });
+
+    return {
+      totalCells,
+      numericPct: totalCells > 0 ? Math.round((numericCells / totalCells) * 1000) / 10 : 0,
+      categoricalPct: totalCells > 0 ? Math.round((categoricalCells / totalCells) * 1000) / 10 : 0,
+    };
+  }, [dataset]);
+
+  // ===== Column-Level Statistics =====
+  const columnStats = useMemo(() => {
+    if (!dataset || dataset.rows.length === 0) return [];
+
+    return dataset.headers.map((header, idx) => {
+      const values = dataset.rows.map(r => r[idx]);
+      const nonNull = values.filter(v => v !== null && v !== undefined && v !== '');
+      const numericValues = nonNull.filter(v => typeof v === 'number' || (!isNaN(Number(v)) && v !== '')).map(Number);
+
+      if (numericValues.length > nonNull.length * 0.5 && numericValues.length > 0) {
+        const min = Math.min(...numericValues);
+        const max = Math.max(...numericValues);
+        const mean = numericValues.reduce((s, v) => s + v, 0) / numericValues.length;
+        return { header, isNumeric: true, min, max, mean };
+      }
+      return { header, isNumeric: false, min: 0, max: 0, mean: 0 };
+    });
+  }, [dataset]);
+
   return (
     <div className="space-y-6">
       {/* Upload Area */}
-      <Card className="border-dashed">
+      <Card className="border-dashed overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
             <Upload className="size-5" />
@@ -221,7 +429,7 @@ export default function DataUpload() {
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
             className={`
-              relative cursor-pointer rounded-xl border-2 transition-all duration-200
+              relative cursor-pointer rounded-xl border-2 transition-all duration-300
               flex flex-col items-center justify-center gap-3 py-10 px-6
               ${isDragOver
                 ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 scale-[1.01]'
@@ -229,7 +437,24 @@ export default function DataUpload() {
               }
               ${isProcessing ? 'pointer-events-none opacity-60' : ''}
             `}
+            style={{
+              backgroundImage: isDragOver
+                ? 'none'
+                : `repeating-linear-gradient(0deg, transparent, transparent 9px, rgba(16,185,129,0.08) 9px, rgba(16,185,129,0.08) 10px),
+                   repeating-linear-gradient(90deg, transparent, transparent 9px, rgba(16,185,129,0.08) 9px, rgba(16,185,129,0.08) 10px)`,
+              backgroundSize: '10px 10px',
+              animation: !isDragOver && !isProcessing ? 'dashMove 20s linear infinite' : 'none',
+            }}
           >
+            {/* Animated dashed border overlay */}
+            <div
+              className="absolute inset-0 rounded-xl pointer-events-none"
+              style={{
+                border: '2px dashed',
+                borderColor: isDragOver ? 'transparent' : 'rgba(16,185,129,0.25)',
+                animation: !isDragOver && !isProcessing ? 'dashRotate 8s linear infinite' : 'none',
+              }}
+            />
             <input
               ref={fileInputRef}
               type="file"
@@ -303,13 +528,34 @@ export default function DataUpload() {
           {/* Dataset Info Card */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                <FileSpreadsheet className="size-5" />
-                Dataset Overview
-              </CardTitle>
-              <CardDescription>
-                Summary of your loaded dataset
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                    <FileSpreadsheet className="size-5" />
+                    Dataset Overview
+                  </CardTitle>
+                  <CardDescription>
+                    Summary of your loaded dataset
+                  </CardDescription>
+                </div>
+                {fileInfo && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="text-xs">
+                        <div className="space-y-1">
+                          <p>File size: {fileInfo.size}</p>
+                          <p>Modified: {fileInfo.lastModified}</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -321,6 +567,9 @@ export default function DataUpload() {
                   <p className="mt-1 truncate text-sm font-semibold text-foreground" title={dataset.fileName}>
                     {dataset.fileName}
                   </p>
+                  {fileInfo && (
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">{fileInfo.size} • {fileInfo.lastModified}</p>
+                  )}
                 </div>
                 <div className="rounded-lg border bg-gradient-to-br from-teal-50 to-cyan-50 p-4 dark:from-teal-950/30 dark:to-cyan-950/30">
                   <div className="flex items-center gap-2 text-teal-600 dark:text-teal-400">
@@ -358,7 +607,6 @@ export default function DataUpload() {
                 <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Columns</p>
                 <div className="flex flex-wrap gap-1.5">
                   {dataset.headers.map((header, idx) => {
-                    // Determine if column is numeric by checking sample values
                     const sampleValues = dataset.rows.slice(0, 10).map(r => r[idx]);
                     const isNumeric = sampleValues.filter(v => v !== null && v !== '' && !isNaN(Number(v))).length > sampleValues.filter(v => v === null || v === '').length;
                     return (
@@ -380,6 +628,177 @@ export default function DataUpload() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Data Quality Score & Quick Stats Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Data Quality Score Card */}
+            {qualityScore && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                    <ShieldCheck className="size-5" />
+                    Data Quality Score
+                  </CardTitle>
+                  <CardDescription>Quick assessment of your dataset quality</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-6">
+                    <QualityRing score={qualityScore.score} />
+                    <div className="flex-1 space-y-3">
+                      {/* Missing Values */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            <X className="size-3" />
+                            Missing Values
+                          </span>
+                          <span className={`text-xs font-semibold ${qualityScore.missingPct === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {qualityScore.missingPct}%
+                          </span>
+                        </div>
+                        <Progress
+                          value={100 - qualityScore.missingPct}
+                          className="h-1.5"
+                        />
+                      </div>
+                      {/* Duplicate Rows */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            <Database className="size-3" />
+                            Duplicate Rows
+                          </span>
+                          <span className={`text-xs font-semibold ${qualityScore.dupPct === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {qualityScore.dupPct}%
+                          </span>
+                        </div>
+                        <Progress
+                          value={100 - qualityScore.dupPct}
+                          className="h-1.5"
+                        />
+                      </div>
+                      {/* Type Consistency */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            <TrendingUp className="size-3" />
+                            Type Consistency
+                          </span>
+                          <span className={`text-xs font-semibold ${qualityScore.consistencyPct >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {qualityScore.consistencyPct}%
+                          </span>
+                        </div>
+                        <Progress
+                          value={qualityScore.consistencyPct}
+                          className="h-1.5"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick Stats Card */}
+            {quickStats && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                    <Gauge className="size-5" />
+                    Quick Stats
+                  </CardTitle>
+                  <CardDescription>Data composition at a glance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="rounded-lg border bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-800/50 dark:to-slate-800/30 text-center">
+                      <p className="text-2xl font-bold text-foreground">
+                        {quickStats.totalCells.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Total Cells</p>
+                    </div>
+                    <div className="rounded-lg border bg-gradient-to-br from-teal-50 to-emerald-50 p-4 dark:from-teal-950/30 dark:to-emerald-950/30 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Hash className="size-4 text-teal-600 dark:text-teal-400" />
+                        <p className="text-2xl font-bold text-teal-700 dark:text-teal-400">
+                          {quickStats.numericPct}%
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Numeric Cells</p>
+                    </div>
+                    <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-orange-50 p-4 dark:from-amber-950/30 dark:to-orange-950/30 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Type className="size-4 text-amber-600 dark:text-amber-400" />
+                        <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                          {quickStats.categoricalPct}%
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Categorical Cells</p>
+                    </div>
+                  </div>
+
+                  {/* Composition bar */}
+                  <div className="mt-4">
+                    <div className="flex h-3 w-full rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+                      <div
+                        className="bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-500"
+                        style={{ width: `${quickStats.numericPct}%` }}
+                        title={`Numeric: ${quickStats.numericPct}%`}
+                      />
+                      <div
+                        className="bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-500"
+                        style={{ width: `${quickStats.categoricalPct}%` }}
+                        title={`Categorical: ${quickStats.categoricalPct}%`}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-2 text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-gradient-to-r from-teal-400 to-emerald-500" />
+                        Numeric
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-gradient-to-r from-amber-400 to-orange-400" />
+                        Categorical
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-slate-200 dark:bg-slate-700" />
+                        Missing/Empty
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Column-Level Statistics */}
+          {columnStats.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                  <TrendingUp className="size-5" />
+                  Column Statistics
+                </CardTitle>
+                <CardDescription>
+                  Range and mean overview for each numeric column
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-0.5">
+                  {columnStats.map(stat => (
+                    <ColumnStatBar
+                      key={stat.header}
+                      label={stat.header}
+                      min={stat.min}
+                      max={stat.max}
+                      mean={stat.mean}
+                      isNumeric={stat.isNumeric}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Data Preview Card */}
           <Card>
@@ -434,6 +853,19 @@ export default function DataUpload() {
           </Card>
         </>
       )}
+
+      {/* CSS animations for dashed border */}
+      <style jsx>{`
+        @keyframes dashRotate {
+          from { border-color: rgba(16,185,129,0.25); }
+          50% { border-color: rgba(16,185,129,0.4); }
+          to { border-color: rgba(16,185,129,0.25); }
+        }
+        @keyframes dashMove {
+          from { background-position: 0 0; }
+          to { background-position: 100px 100px; }
+        }
+      `}</style>
     </div>
   );
 }

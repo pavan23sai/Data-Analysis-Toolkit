@@ -307,10 +307,10 @@ export default function NormalityTesting() {
                     <TableRow key={row.testName}>
                       <TableCell className="font-medium">{row.testName}</TableCell>
                       <TableCell className="text-center font-mono">
-                        {typeof row.statistic === 'number' ? row.statistic.toFixed(4) : row.statistic}
+                        {typeof row.statistic === 'number' ? row.statistic.toFixed(6) : row.statistic}
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {typeof row.pValue === 'number' ? row.pValue.toFixed(4) : row.pValue}
+                        {typeof row.pValue === 'number' ? row.pValue.toFixed(6) : row.pValue}
                       </TableCell>
                       <TableCell className="text-center">
                         {row.reject === null ? (
@@ -353,13 +353,13 @@ export default function NormalityTesting() {
                     <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">W Statistic</p>
                       <p className="text-lg font-semibold font-mono truncate">
-                        {isNaN(shapiroWilkResult.statistic) ? 'N/A' : shapiroWilkResult.statistic.toFixed(4)}
+                        {isNaN(shapiroWilkResult.statistic) ? 'N/A' : shapiroWilkResult.statistic.toFixed(6)}
                       </p>
                     </div>
                     <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
                       <p className="text-lg font-semibold font-mono truncate">
-                        {isNaN(shapiroWilkResult.pValue) ? 'N/A' : shapiroWilkResult.pValue.toFixed(4)}
+                        {isNaN(shapiroWilkResult.pValue) ? 'N/A' : shapiroWilkResult.pValue.toFixed(6)}
                       </p>
                     </div>
                   </div>
@@ -387,13 +387,13 @@ export default function NormalityTesting() {
                     <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">D Statistic</p>
                       <p className="text-lg font-semibold font-mono truncate">
-                        {isNaN(ksResult.statistic) ? 'N/A' : ksResult.statistic.toFixed(4)}
+                        {isNaN(ksResult.statistic) ? 'N/A' : ksResult.statistic.toFixed(6)}
                       </p>
                     </div>
                     <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
                       <p className="text-lg font-semibold font-mono truncate">
-                        {isNaN(ksResult.pValue) ? 'N/A' : ksResult.pValue.toFixed(4)}
+                        {isNaN(ksResult.pValue) ? 'N/A' : ksResult.pValue.toFixed(6)}
                       </p>
                     </div>
                   </div>
@@ -421,13 +421,13 @@ export default function NormalityTesting() {
                     <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">A² Statistic</p>
                       <p className="text-lg font-semibold font-mono truncate">
-                        {isNaN(adResult.statistic) ? 'N/A' : adResult.statistic.toFixed(4)}
+                        {isNaN(adResult.statistic) ? 'N/A' : adResult.statistic.toFixed(6)}
                       </p>
                     </div>
                     <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
                       <p className="text-lg font-semibold font-mono truncate">
-                        {isNaN(adResult.pValue) ? 'N/A' : adResult.pValue.toFixed(4)}
+                        {isNaN(adResult.pValue) ? 'N/A' : adResult.pValue.toFixed(6)}
                       </p>
                     </div>
                   </div>

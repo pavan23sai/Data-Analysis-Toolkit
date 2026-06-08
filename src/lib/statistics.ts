@@ -629,7 +629,7 @@ export function shapiroWilkTest(data: number[]): { statistic: number; pValue: nu
     ? 'Fail to reject H₀: Data appears to be normally distributed (p > 0.05)' 
     : 'Reject H₀: Data does not appear to be normally distributed (p ≤ 0.05)';
   
-  return { statistic: Math.round(W * 10000) / 10000, pValue: Math.round(pValue * 10000) / 10000, conclusion };
+  return { statistic: Math.round(W * 1000000) / 1000000, pValue: Math.round(pValue * 1000000) / 1000000, conclusion };
 }
 
 function shapiroWilkCoefficients(n: number): number[] | null {

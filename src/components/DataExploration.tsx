@@ -15,6 +15,10 @@ import {
   ArrowDown,
   ArrowUp,
   Info,
+  Hash,
+  Type,
+  Calendar,
+  Fingerprint,
 } from 'lucide-react';
 import {
   Card,
@@ -41,6 +45,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useDataset } from '@/hooks/useDataset';
 import {
   analyzeMissingValues,
@@ -59,10 +69,83 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Cell,
   ReferenceLine,
 } from 'recharts';
+
+type ColumnType = 'numeric' | 'categorical' | 'date-like' | 'id/unique';
+
+function detectColumnType(values: (string | number | null | undefined)[]): ColumnType {
+  const nonNull = values.filter(v => v !== null && v !== undefined && v !== '');
+  if (nonNull.length === 0) return 'categorical';
+
+  // Check if all unique -> ID/unique
+  const unique = new Set(nonNull.map(String));
+  if (unique.size === nonNull.length && nonNull.length > 3) {
+    // Additional check: IDs often have patterns like S001, S002 or are sequential
+    const strValues = nonNull.map(String);
+    const hasIdPattern = strValues.some(v => /^[A-Za-z]+\d+$/.test(v));
+    if (hasIdPattern) return 'id/unique';
+  }
+
+  // Check numeric
+  const numericCount = nonNull.filter(v => typeof v === 'number' || (!isNaN(Number(v)))).length;
+  if (numericCount > nonNull.length * 0.8) return 'numeric';
+
+  // Check date-like
+  const datePatterns = [
+    /^\d{4}-\d{2}-\d{2}$/,       // 2024-01-15
+    /^\d{2}\/\d{2}\/\d{4}$/,     // 01/15/2024
+    /^\d{2}-\d{2}-\d{4}$/,       // 15-01-2024
+    /^\w{3}\s+\d{1,2},?\s*\d{4}$/, // Jan 15, 2024
+  ];
+  const dateLikeCount = nonNull.filter(v => {
+    const s = String(v);
+    return datePatterns.some(p => p.test(s));
+  }).length;
+  if (dateLikeCount > nonNull.length * 0.5) return 'date-like';
+
+  // Default: categorical
+  return 'categorical';
+}
+
+function TypeIcon({ type }: { type: ColumnType }) {
+  switch (type) {
+    case 'numeric': return <Hash className="size-3.5" />;
+    case 'categorical': return <Type className="size-3.5" />;
+    case 'date-like': return <Calendar className="size-3.5" />;
+    case 'id/unique': return <Fingerprint className="size-3.5" />;
+  }
+}
+
+function TypeBadge({ type }: { type: ColumnType }) {
+  const config: Record<ColumnType, { label: string; className: string }> = {
+    'numeric': {
+      label: 'Numeric',
+      className: 'bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 border-teal-200 dark:border-teal-800',
+    },
+    'categorical': {
+      label: 'Categorical',
+      className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    },
+    'date-like': {
+      label: 'Date-like',
+      className: 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300 border-violet-200 dark:border-violet-800',
+    },
+    'id/unique': {
+      label: 'ID/Unique',
+      className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+    },
+  };
+  const c = config[type];
+  return (
+    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 gap-1 ${c.className}`}>
+      <TypeIcon type={type} />
+      {c.label}
+    </Badge>
+  );
+}
 
 export default function DataExploration() {
   const { dataset, setDataset, getNumericColumns, getColumnData } = useDataset();
@@ -94,6 +177,16 @@ export default function DataExploration() {
         return obj;
       });
     return findDuplicates(rowsAsObjects);
+  }, [dataset]);
+
+  // ===== Data Type Detection =====
+  const columnTypes = useMemo(() => {
+    if (!dataset || dataset.rows.length === 0) return [];
+    return dataset.headers.map((header, idx) => {
+      const values = dataset.rows.map(r => r[idx]);
+      const type = detectColumnType(values);
+      return { header, type, idx };
+    });
   }, [dataset]);
 
   // ===== Data Cleaning =====
@@ -233,9 +326,61 @@ export default function DataExploration() {
     );
   }
 
+  const noMissing = totalMissing === 0;
+  const noDuplicates = !duplicateResult || duplicateResult.duplicateCount === 0;
+
   return (
     <div className="space-y-6">
-      {/* ===== 1. Missing Value Analysis ===== */}
+      {/* ===== Data Type Detection ===== */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Search className="size-5 text-emerald-600 dark:text-emerald-400" />
+            <CardTitle className="text-lg">Data Type Detection</CardTitle>
+          </div>
+          <CardDescription>
+            Automatically detected types for each column in your dataset
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {columnTypes.map(({ header, type }) => {
+              const colIdx = dataset.headers.indexOf(header);
+              const sampleValues = dataset.rows.slice(0, 3).map(r => r[colIdx]).filter(v => v !== null && v !== undefined && v !== '');
+              return (
+                <div
+                  key={header}
+                  className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3 space-y-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground truncate" title={header}>
+                      {header}
+                    </span>
+                    <TypeBadge type={type} />
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {sampleValues.slice(0, 3).map((val, i) => (
+                      <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-muted-foreground truncate max-w-[80px]">
+                        {String(val)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Legend */}
+          <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t dark:border-slate-700">
+            {(['numeric', 'categorical', 'date-like', 'id/unique'] as ColumnType[]).map(t => (
+              <div key={t} className="flex items-center gap-1.5">
+                <TypeBadge type={t} />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ===== Missing Value Analysis ===== */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -269,42 +414,64 @@ export default function DataExploration() {
                     <TableHead className="text-right whitespace-nowrap">Missing</TableHead>
                     <TableHead className="text-right whitespace-nowrap">Missing %</TableHead>
                     <TableHead className="text-right whitespace-nowrap">Present</TableHead>
+                    <TableHead className="w-32 whitespace-nowrap">Completeness</TableHead>
                     <TableHead className="text-center whitespace-nowrap">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {missingAnalysis.map((col) => (
-                    <TableRow key={col.column}>
-                      <TableCell className="font-medium whitespace-nowrap">{col.column}</TableCell>
-                      <TableCell className="text-right whitespace-nowrap">{col.totalCount}</TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        {col.missingCount > 0 ? (
-                          <span className="text-amber-600 dark:text-amber-400 font-medium">{col.missingCount}</span>
-                        ) : (
-                          <span>{col.missingCount}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        {col.missingPercent > 0 ? (
-                          <span className="text-amber-600 dark:text-amber-400 font-medium">
-                            {col.missingPercent.toFixed(1)}%
-                          </span>
-                        ) : (
-                          <span>0%</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">{col.presentCount}</TableCell>
-                      <TableCell className="text-center whitespace-nowrap">
-                        {col.missingCount === 0 ? (
-                          <CheckCircle2 className="size-4 text-emerald-500 inline-block" />
-                        ) : col.missingPercent > 30 ? (
-                          <XCircle className="size-4 text-red-500 inline-block" />
-                        ) : (
-                          <AlertTriangle className="size-4 text-amber-500 inline-block" />
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {missingAnalysis.map((col) => {
+                    const presentPct = col.totalCount > 0 ? (col.presentCount / col.totalCount) * 100 : 100;
+                    return (
+                      <TableRow key={col.column}>
+                        <TableCell className="font-medium whitespace-nowrap">{col.column}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{col.totalCount}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          {col.missingCount > 0 ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">{col.missingCount}</span>
+                          ) : (
+                            <span>{col.missingCount}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          {col.missingPercent > 0 ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">
+                              {col.missingPercent.toFixed(1)}%
+                            </span>
+                          ) : (
+                            <span>0%</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{col.presentCount}</TableCell>
+                        {/* Mini progress bar */}
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  presentPct >= 90 ? 'bg-emerald-500' :
+                                  presentPct >= 70 ? 'bg-amber-500' :
+                                  'bg-red-500'
+                                }`}
+                                style={{ width: `${presentPct}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground tabular-nums w-9 text-right">
+                              {presentPct.toFixed(0)}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center whitespace-nowrap">
+                          {col.missingCount === 0 ? (
+                            <CheckCircle2 className="size-4 text-emerald-500 inline-block" />
+                          ) : col.missingPercent > 30 ? (
+                            <XCircle className="size-4 text-red-500 inline-block" />
+                          ) : (
+                            <AlertTriangle className="size-4 text-amber-500 inline-block" />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </ScrollArea>
@@ -312,7 +479,7 @@ export default function DataExploration() {
         </CardContent>
       </Card>
 
-      {/* ===== 2. Duplicate Analysis ===== */}
+      {/* ===== Duplicate Analysis ===== */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -349,7 +516,7 @@ export default function DataExploration() {
         </CardContent>
       </Card>
 
-      {/* ===== 3. Data Cleaning Options ===== */}
+      {/* ===== Data Cleaning Options ===== */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -369,44 +536,98 @@ export default function DataExploration() {
                 Handle Missing Values
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDropMissingRows}
-                  disabled={totalMissing === 0}
-                  className="border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-800 w-full justify-start"
-                >
-                  <Trash2 className="size-3.5 mr-1.5 shrink-0" />
-                  Drop Rows with Missing
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFillMissing('mean')}
-                  disabled={totalMissing === 0}
-                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
-                >
-                  Fill with Mean
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFillMissing('median')}
-                  disabled={totalMissing === 0}
-                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
-                >
-                  Fill with Median
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFillMissing('mode')}
-                  disabled={totalMissing === 0}
-                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
-                >
-                  Fill with Mode
-                </Button>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="w-full">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDropMissingRows}
+                          disabled={noMissing}
+                          className="border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-800 w-full justify-start"
+                        >
+                          <Trash2 className="size-3.5 mr-1.5 shrink-0" />
+                          Drop Rows with Missing
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{noMissing ? 'No missing values found — option disabled' : `Drop ${totalMissing} row(s) with missing values`}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="w-full">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleFillMissing('mean')}
+                          disabled={noMissing}
+                          className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
+                        >
+                          Fill with Mean
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{noMissing ? 'No missing values found — option disabled' : 'Fill missing numeric values with column mean'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="w-full">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleFillMissing('median')}
+                          disabled={noMissing}
+                          className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
+                        >
+                          Fill with Median
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{noMissing ? 'No missing values found — option disabled' : 'Fill missing numeric values with column median'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="w-full">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleFillMissing('mode')}
+                          disabled={noMissing}
+                          className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
+                        >
+                          Fill with Mode
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{noMissing ? 'No missing values found — option disabled' : 'Fill missing numeric values with column mode'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
+              {/* Visible hint text for disabled state */}
+              {noMissing && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                  <CheckCircle2 className="size-3 text-emerald-500 shrink-0" />
+                  All columns have complete data — no missing values to handle
+                </p>
+              )}
             </div>
 
             <div className="border-t dark:border-slate-700" />
@@ -417,16 +638,33 @@ export default function DataExploration() {
                 <Copy className="size-4 text-amber-500 shrink-0" />
                 Handle Duplicates
               </h4>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRemoveDuplicates}
-                disabled={!duplicateResult || duplicateResult.duplicateCount === 0}
-                className="border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-800"
-              >
-                <Trash2 className="size-3.5 mr-1.5 shrink-0" />
-                Remove Duplicate Rows
-              </Button>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRemoveDuplicates}
+                        disabled={noDuplicates}
+                        className="border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-800"
+                      >
+                        <Trash2 className="size-3.5 mr-1.5 shrink-0" />
+                        Remove Duplicate Rows
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{noDuplicates ? 'No duplicate rows found — option disabled' : `Remove ${duplicateResult?.duplicateCount} duplicate row(s)`}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {noDuplicates && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                  <CheckCircle2 className="size-3 text-emerald-500 shrink-0" />
+                  All rows are unique — no duplicates to remove
+                </p>
+              )}
             </div>
 
             {/* Cleaning Message */}
@@ -440,7 +678,7 @@ export default function DataExploration() {
         </CardContent>
       </Card>
 
-      {/* ===== 4. Outlier Detection (IQR) ===== */}
+      {/* ===== Outlier Detection (IQR) ===== */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -559,7 +797,7 @@ export default function DataExploration() {
                         width={60}
                         tick={{ fontSize: 12 }}
                       />
-                      <Tooltip
+                      <RechartsTooltip
                         formatter={(value: number) => [value.toFixed(4), 'Value']}
                         contentStyle={{
                           borderRadius: '8px',

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import Papa from 'papaparse';
-import { Upload, FileSpreadsheet, Download, Database, Rows3, Columns3, X, Info, ShieldCheck, TrendingUp, Hash, Type, Gauge } from 'lucide-react';
+import { Upload, FileSpreadsheet, Download, Database, Rows3, Columns3, X, Info, ShieldCheck, TrendingUp, Hash, Type, Gauge, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDataset, type Dataset } from '@/hooks/useDataset';
 import {
   Card,
@@ -23,6 +23,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Tooltip,
   TooltipContent,
@@ -227,6 +235,9 @@ export default function DataUpload() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<{ size: string; lastModified: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(async (file: File) => {
@@ -308,9 +319,49 @@ export default function DataUpload() {
     setDataset(null);
     setError(null);
     setFileInfo(null);
+    setSearchQuery('');
+    setCurrentPage(1);
+    setRowsPerPage(10);
   }, [setDataset]);
 
-  const previewRows = dataset ? dataset.rows.slice(0, 10) : [];
+  // ===== Search & Filter Logic =====
+  const filteredRows = useMemo(() => {
+    if (!dataset || dataset.rows.length === 0) return [];
+    if (!searchQuery.trim()) return dataset.rows;
+    const query = searchQuery.toLowerCase().trim();
+    return dataset.rows.filter(row =>
+      row.some(cell => {
+        if (cell === null || cell === undefined) return false;
+        return String(cell).toLowerCase().includes(query);
+      })
+    );
+  }, [dataset, searchQuery]);
+
+  const totalFilteredCount = filteredRows.length;
+  const totalCount = dataset?.rows.length ?? 0;
+  const isFiltering = searchQuery.trim().length > 0;
+
+  // Pagination
+  const effectiveRowsPerPage = rowsPerPage === -1 ? totalFilteredCount : rowsPerPage;
+  const totalPages = effectiveRowsPerPage > 0 ? Math.max(1, Math.ceil(totalFilteredCount / effectiveRowsPerPage)) : 1;
+  // Reset to page 1 when filter changes or rows per page changes
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedRows = useMemo(() => {
+    if (effectiveRowsPerPage >= totalFilteredCount) return filteredRows;
+    const start = (safeCurrentPage - 1) * effectiveRowsPerPage;
+    return filteredRows.slice(start, start + effectiveRowsPerPage);
+  }, [filteredRows, safeCurrentPage, effectiveRowsPerPage, totalFilteredCount]);
+
+  // Reset page when search/rowsPerPage changes
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleRowsPerPageChange = useCallback((value: string) => {
+    setRowsPerPage(Number(value));
+    setCurrentPage(1);
+  }, []);
 
   // ===== Data Quality Score =====
   const qualityScore = useMemo(() => {
@@ -804,15 +855,72 @@ export default function DataUpload() {
           {/* Data Preview Card */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                <Rows3 className="size-5" />
-                Data Preview
-              </CardTitle>
-              <CardDescription>
-                Showing first {Math.min(10, dataset.rows.length)} of {dataset.rows.length.toLocaleString()} rows
-              </CardDescription>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                    <Rows3 className="size-5" />
+                    Data Preview
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {isFiltering
+                      ? `Showing ${totalFilteredCount.toLocaleString()} of ${totalCount.toLocaleString()} rows matching filter`
+                      : `Showing ${Math.min(effectiveRowsPerPage, totalFilteredCount)} of ${totalCount.toLocaleString()} rows`
+                    }
+                  </CardDescription>
+                </div>
+                {/* Rows per page selector */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">Rows per page</span>
+                  <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
+                    <SelectTrigger className="w-[80px] h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="-1">All</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
+              {/* Search bar */}
+              <div className="mb-4 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search across all columns..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-9 pr-9 h-9 text-sm border-emerald-200 focus-visible:border-emerald-400 focus-visible:ring-emerald-400/30 dark:border-emerald-800 dark:focus-visible:border-emerald-600 dark:focus-visible:ring-emerald-600/30"
+                  aria-label="Search rows"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => handleSearchChange('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter result count */}
+              {isFiltering && (
+                <div className="mb-3 flex items-center gap-2 text-xs">
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                    <Search className="size-3 mr-1" />
+                    {totalFilteredCount.toLocaleString()} result{totalFilteredCount !== 1 ? 's' : ''}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    out of {totalCount.toLocaleString()} total rows
+                  </span>
+                </div>
+              )}
+
               <ScrollArea className="max-h-96 w-full rounded-lg border">
                 <Table>
                   <TableHeader>
@@ -826,29 +934,110 @@ export default function DataUpload() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {previewRows.map((row, rowIdx) => (
-                      <TableRow key={rowIdx}>
-                        <TableCell className="text-center text-xs text-muted-foreground">
-                          {rowIdx + 1}
+                    {paginatedRows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={dataset.headers.length + 1} className="h-24 text-center text-muted-foreground">
+                          <div className="flex flex-col items-center gap-2">
+                            <Search className="size-6 text-muted-foreground/50" />
+                            <span>No rows match your search.</span>
+                            <button
+                              onClick={() => handleSearchChange('')}
+                              className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2"
+                            >
+                              Clear filter
+                            </button>
+                          </div>
                         </TableCell>
-                        {row.map((cell, cellIdx) => (
-                          <TableCell key={cellIdx} className="text-xs font-mono whitespace-nowrap">
-                            {cell === null || cell === undefined ? (
-                              <span className="text-muted-foreground/50 italic">null</span>
-                            ) : (
-                              String(cell)
-                            )}
-                          </TableCell>
-                        ))}
                       </TableRow>
-                    ))}
+                    ) : (
+                      paginatedRows.map((row, rowIdx) => {
+                        const globalRowIdx = (safeCurrentPage - 1) * effectiveRowsPerPage + rowIdx + 1;
+                        return (
+                          <TableRow key={rowIdx}>
+                            <TableCell className="text-center text-xs text-muted-foreground">
+                              {globalRowIdx}
+                            </TableCell>
+                            {row.map((cell, cellIdx) => (
+                              <TableCell key={cellIdx} className="text-xs font-mono whitespace-nowrap">
+                                {cell === null || cell === undefined ? (
+                                  <span className="text-muted-foreground/50 italic">null</span>
+                                ) : (
+                                  String(cell)
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
               </ScrollArea>
-              {dataset.rows.length > 10 && (
-                <p className="mt-2 text-center text-xs text-muted-foreground">
-                  and {dataset.rows.length - 10} more rows...
-                </p>
+
+              {/* Pagination controls */}
+              {totalFilteredCount > effectiveRowsPerPage && rowsPerPage !== -1 && (
+                <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Page {safeCurrentPage} of {totalPages}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={safeCurrentPage <= 1}
+                      className="h-8 gap-1 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30 disabled:opacity-50"
+                    >
+                      <ChevronLeft className="size-4" />
+                      Previous
+                    </Button>
+                    {(() => {
+                      const pages: (number | 'ellipsis')[] = [];
+                      const maxVisible = 5;
+                      if (totalPages <= maxVisible) {
+                        for (let i = 1; i <= totalPages; i++) pages.push(i);
+                      } else {
+                        pages.push(1);
+                        if (safeCurrentPage > 3) pages.push('ellipsis');
+                        const start = Math.max(2, safeCurrentPage - 1);
+                        const end = Math.min(totalPages - 1, safeCurrentPage + 1);
+                        for (let i = start; i <= end; i++) pages.push(i);
+                        if (safeCurrentPage < totalPages - 2) pages.push('ellipsis');
+                        pages.push(totalPages);
+                      }
+                      return pages.map((page, idx) =>
+                        page === 'ellipsis' ? (
+                          <span key={`ellipsis-${idx}`} className="flex size-8 items-center justify-center text-xs text-muted-foreground">
+                            …
+                          </span>
+                        ) : (
+                          <Button
+                            key={page}
+                            variant={page === safeCurrentPage ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className={page === safeCurrentPage
+                              ? 'size-8 p-0 text-xs bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white'
+                              : 'size-8 p-0 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30'
+                            }
+                          >
+                            {page}
+                          </Button>
+                        )
+                      );
+                    })()}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={safeCurrentPage >= totalPages}
+                      className="h-8 gap-1 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30 disabled:opacity-50"
+                    >
+                      Next
+                      <ChevronRight className="size-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

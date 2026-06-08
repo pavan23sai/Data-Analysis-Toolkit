@@ -9,6 +9,9 @@ import {
   chiSquareGoFTest,
   oneWayANOVA,
   leveneTest,
+  mean,
+  standardDeviation,
+  variance,
 } from '@/lib/statistics'
 import { useDataset } from '@/hooks/useDataset'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,6 +36,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ReferenceLine,
+  Cell,
+  ErrorBar,
+} from 'recharts'
+import {
   FlaskConical,
   CheckCircle2,
   XCircle,
@@ -41,7 +56,158 @@ import {
   Sigma,
   TrendingUp,
   AlertTriangle,
+  Gauge,
+  Ruler,
 } from 'lucide-react'
+
+// ==================== Cohen's d Helpers ====================
+function computeCohensDOneSample(data: number[], mu0: number): number {
+  const sd = standardDeviation(data)
+  if (sd === 0 || isNaN(sd)) return NaN
+  return (mean(data) - mu0) / sd
+}
+
+function computeCohensDTwoSample(data1: number[], data2: number[]): number {
+  const n1 = data1.length
+  const n2 = data2.length
+  const v1 = variance(data1)
+  const v2 = variance(data2)
+  const pooledStdDev = Math.sqrt(((n1 - 1) * v1 + (n2 - 1) * v2) / (n1 + n2 - 2))
+  if (pooledStdDev === 0 || isNaN(pooledStdDev)) return NaN
+  return (mean(data1) - mean(data2)) / pooledStdDev
+}
+
+function computeCohensDPaired(data1: number[], data2: number[]): number {
+  const diffs = data1.map((v, i) => v - data2[i])
+  const sd = standardDeviation(diffs)
+  if (sd === 0 || isNaN(sd)) return NaN
+  return mean(diffs) / sd
+}
+
+function interpretCohensD(d: number): { label: string; color: string; className: string } {
+  const absD = Math.abs(d)
+  if (isNaN(d)) return { label: 'N/A', color: 'slate', className: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700' }
+  if (absD < 0.2) return { label: 'Negligible', color: 'slate', className: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700' }
+  if (absD < 0.5) return { label: 'Small', color: 'amber', className: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800' }
+  if (absD < 0.8) return { label: 'Medium', color: 'orange', className: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800' }
+  return { label: 'Large', color: 'rose', className: 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800' }
+}
+
+// ==================== Effect Size Badge ====================
+function EffectSizeBadge({ d }: { d: number }) {
+  const interp = interpretCohensD(d)
+  return (
+    <Badge className={interp.className}>
+      <Ruler className="size-3 mr-1 shrink-0" />
+      d = {isNaN(d) ? 'N/A' : d.toFixed(4)} ({interp.label})
+    </Badge>
+  )
+}
+
+// ==================== P-Value Gauge ====================
+function PValueGauge({ pValue, alpha = 0.05 }: { pValue: number; alpha?: number }) {
+  const significant = pValue <= alpha
+  // Needle angle: 0 at left (p=1, not significant), 180 at right (p=0, significant)
+  const clampedP = Math.max(0, Math.min(1, pValue))
+  const needleAngle = clampedP * 180 // 0=right(significant), 180=left(not significant)
+  // Convert angle to SVG coordinates (0° = left, 180° = right)
+  const angleRad = (needleAngle * Math.PI) / 180
+  const needleLength = 65
+  const cx = 100
+  const cy = 100
+  const nx = cx - needleLength * Math.cos(angleRad)
+  const ny = cy - needleLength * Math.sin(angleRad)
+
+  // Alpha threshold position (p = alpha)
+  const alphaAngleRad = (alpha * 180 * Math.PI) / 180
+  const alphaX = cx - 78 * Math.cos(alphaAngleRad)
+  const alphaY = cy - 78 * Math.sin(alphaAngleRad)
+
+  // Calculate arc segments for green and red zones
+  // Green zone: p from alpha to 1.0 (left side)
+  // Red zone: p from 0 to alpha (right side)
+  const alphaAngleDeg = alpha * 180
+  const greenStartAngle = alphaAngleDeg
+  const greenEndAngle = 180
+
+  // Helper to get arc path
+  const getArcPath = (startAngle: number, endAngle: number, radius: number) => {
+    const startRad = (startAngle * Math.PI) / 180
+    const endRad = (endAngle * Math.PI) / 180
+    const x1 = cx - radius * Math.cos(startRad)
+    const y1 = cy - radius * Math.sin(startRad)
+    const x2 = cx - radius * Math.cos(endRad)
+    const y2 = cy - radius * Math.sin(endRad)
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0
+    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 0 ${x2} ${y2}`
+  }
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg viewBox="0 0 200 120" className="w-32 h-20">
+        {/* Green zone (not significant): from alpha threshold to left end */}
+        <path
+          d={getArcPath(greenStartAngle, greenEndAngle, 78)}
+          fill="none"
+          stroke="#10b981"
+          strokeWidth="12"
+          strokeLinecap="round"
+          opacity={0.8}
+        />
+        {/* Red zone (significant): from right end to alpha threshold */}
+        <path
+          d={getArcPath(0, alphaAngleDeg, 78)}
+          fill="none"
+          stroke="#f43f5e"
+          strokeWidth="12"
+          strokeLinecap="round"
+          opacity={0.8}
+        />
+        {/* Alpha threshold dashed line */}
+        <line
+          x1={alphaX}
+          y1={alphaY}
+          x2={cx}
+          y2={cy}
+          stroke={significant ? '#f43f5e' : '#6b7280'}
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+          opacity={0.6}
+        />
+        {/* Small label for alpha */}
+        <text
+          x={alphaX}
+          y={alphaY - 6}
+          textAnchor="middle"
+          fontSize="8"
+          fill={significant ? '#f43f5e' : '#6b7280'}
+          fontWeight="600"
+        >
+          α={alpha}
+        </text>
+        {/* Needle */}
+        <line
+          x1={cx}
+          y1={cy}
+          x2={nx}
+          y2={ny}
+          stroke={significant ? '#f43f5e' : '#10b981'}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        {/* Center dot */}
+        <circle cx={cx} cy={cy} r="5" fill={significant ? '#f43f5e' : '#10b981'} />
+        <circle cx={cx} cy={cy} r="2.5" fill="white" />
+        {/* Labels */}
+        <text x="22" y="112" fontSize="7" fill="#10b981" fontWeight="600">Not Sig.</text>
+        <text x="148" y="112" fontSize="7" fill="#f43f5e" fontWeight="600">Sig.</text>
+      </svg>
+      <p className={`text-sm font-semibold font-mono ${significant ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+        p = {pValue.toFixed(4)}
+      </p>
+    </div>
+  )
+}
 
 // ==================== Result Badge ====================
 function ResultBadge({ pValue }: { pValue: number }) {
@@ -64,12 +230,12 @@ function ResultBadge({ pValue }: { pValue: number }) {
   )
 }
 
-// ==================== Conclusion Box ====================
-function ConclusionBox({ conclusion, pValue }: { conclusion: string; pValue: number }) {
+// ==================== Conclusion Box (with fade-in animation) ====================
+function ConclusionBox({ conclusion, pValue, effectSizeText }: { conclusion: string; pValue: number; effectSizeText?: string }) {
   const significant = pValue <= 0.05
   return (
     <div
-      className={`mt-4 p-4 rounded-lg border ${
+      className={`mt-4 p-4 rounded-lg border animate-in fade-in duration-500 ${
         significant
           ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900'
           : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900'
@@ -86,9 +252,22 @@ function ConclusionBox({ conclusion, pValue }: { conclusion: string; pValue: num
             {significant ? 'Reject H₀' : 'Fail to Reject H₀'}
           </p>
           <p className="text-sm text-muted-foreground mt-1">{conclusion}</p>
+          {effectSizeText && (
+            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+              <Ruler className="size-3.5 shrink-0" />
+              {effectSizeText}
+            </p>
+          )}
         </div>
       </div>
     </div>
+  )
+}
+
+// ==================== Gradient Divider ====================
+function GradientDivider() {
+  return (
+    <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-4" />
   )
 }
 
@@ -99,11 +278,13 @@ function OneSampleTTestPanel() {
   const [selectedCol, setSelectedCol] = useState('')
   const [mu0, setMu0] = useState('0')
   const [result, setResult] = useState<ReturnType<typeof oneSampleTTest> | null>(null)
+  const [cohensD, setCohensD] = useState<number>(NaN)
   const [error, setError] = useState('')
 
   const handleRun = () => {
     setError('')
     setResult(null)
+    setCohensD(NaN)
     if (!selectedCol) {
       setError('Please select a column.')
       return
@@ -118,8 +299,15 @@ function OneSampleTTestPanel() {
       setError('Please enter a valid μ₀ value.')
       return
     }
-    setResult(oneSampleTTest(data, mu0Val))
+    const testResult = oneSampleTTest(data, mu0Val)
+    setResult(testResult)
+    setCohensD(computeCohensDOneSample(data, mu0Val))
   }
+
+  const effectSizeInterp = interpretCohensD(cohensD)
+  const effectSizeText = !isNaN(cohensD)
+    ? `Effect size: Cohen's d = ${cohensD.toFixed(4)} (${effectSizeInterp.label} effect)`
+    : undefined
 
   return (
     <div className="space-y-4">
@@ -179,9 +367,12 @@ function OneSampleTTestPanel() {
       {result && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Results <ResultBadge pValue={result.pValue} />
-            </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                Results <ResultBadge pValue={result.pValue} />
+              </CardTitle>
+              <PValueGauge pValue={result.pValue} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -193,19 +384,28 @@ function OneSampleTTestPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">t-Statistic</TableCell>
                   <TableCell className="text-right font-mono">{result.tStat}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">p-Value (two-tailed)</TableCell>
                   <TableCell className="text-right font-mono">{result.pValue}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">Degrees of Freedom</TableCell>
                   <TableCell className="text-right font-mono">{result.df}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50 bg-muted/20">
+                  <TableCell className="font-medium flex items-center gap-1.5">
+                    <Ruler className="size-3.5 text-muted-foreground shrink-0" />
+                    Cohen&apos;s d (Effect Size)
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <EffectSizeBadge d={cohensD} />
+                  </TableCell>
+                </TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">Significance (α = 0.05)</TableCell>
                   <TableCell className="text-right">
                     <ResultBadge pValue={result.pValue} />
@@ -214,7 +414,8 @@ function OneSampleTTestPanel() {
               </TableBody>
             </Table>
             </div>
-            <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
+            <GradientDivider />
+            <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} effectSizeText={effectSizeText} />
           </CardContent>
         </Card>
       )}
@@ -230,11 +431,15 @@ function TwoSampleTTestPanel() {
   const [col2, setCol2] = useState('')
   const [equalVar, setEqualVar] = useState(true)
   const [result, setResult] = useState<ReturnType<typeof twoSampleTTest> | null>(null)
+  const [cohensD, setCohensD] = useState<number>(NaN)
+  const [chartData, setChartData] = useState<{ name: string; mean: number; error: number[]; fill: string }[]>([])
   const [error, setError] = useState('')
 
   const handleRun = () => {
     setError('')
     setResult(null)
+    setCohensD(NaN)
+    setChartData([])
     if (!col1 || !col2) {
       setError('Please select both columns.')
       return
@@ -249,8 +454,24 @@ function TwoSampleTTestPanel() {
       setError('Each column needs at least 2 data points.')
       return
     }
-    setResult(twoSampleTTest(data1, data2, equalVar))
+    const testResult = twoSampleTTest(data1, data2, equalVar)
+    setResult(testResult)
+    setCohensD(computeCohensDTwoSample(data1, data2))
+    // Build chart data
+    const m1 = mean(data1)
+    const m2 = mean(data2)
+    const sd1 = standardDeviation(data1)
+    const sd2 = standardDeviation(data2)
+    setChartData([
+      { name: col1, mean: Math.round(m1 * 1000) / 1000, error: [Math.max(0, Math.round((m1 - sd1) * 1000) / 1000), Math.round((m1 + sd1) * 1000) / 1000], fill: '#14b8a6' },
+      { name: col2, mean: Math.round(m2 * 1000) / 1000, error: [Math.max(0, Math.round((m2 - sd2) * 1000) / 1000), Math.round((m2 + sd2) * 1000) / 1000], fill: '#f59e0b' },
+    ])
   }
+
+  const effectSizeInterp = interpretCohensD(cohensD)
+  const effectSizeText = !isNaN(cohensD)
+    ? `Effect size: Cohen's d = ${cohensD.toFixed(4)} (${effectSizeInterp.label} effect)`
+    : undefined
 
   return (
     <div className="space-y-4">
@@ -335,52 +556,113 @@ function TwoSampleTTestPanel() {
       </Card>
 
       {result && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Results <ResultBadge pValue={result.pValue} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Statistic</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">t-Statistic</TableCell>
-                  <TableCell className="text-right font-mono">{result.tStat}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">p-Value (two-tailed)</TableCell>
-                  <TableCell className="text-right font-mono">{result.pValue}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Degrees of Freedom</TableCell>
-                  <TableCell className="text-right font-mono">{result.df}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Variance Assumption</TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant="outline">{equalVar ? 'Equal Variance' : "Welch's (Unequal)"}</Badge>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Significance (α = 0.05)</TableCell>
-                  <TableCell className="text-right">
-                    <ResultBadge pValue={result.pValue} />
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-            </div>
-            <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
-          </CardContent>
-        </Card>
+        <>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  Results <ResultBadge pValue={result.pValue} />
+                </CardTitle>
+                <PValueGauge pValue={result.pValue} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Statistic</TableHead>
+                    <TableHead className="text-right">Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow className="transition-colors hover:bg-muted/50">
+                    <TableCell className="font-medium">t-Statistic</TableCell>
+                    <TableCell className="text-right font-mono">{result.tStat}</TableCell>
+                  </TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50">
+                    <TableCell className="font-medium">p-Value (two-tailed)</TableCell>
+                    <TableCell className="text-right font-mono">{result.pValue}</TableCell>
+                  </TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50">
+                    <TableCell className="font-medium">Degrees of Freedom</TableCell>
+                    <TableCell className="text-right font-mono">{result.df}</TableCell>
+                  </TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50">
+                    <TableCell className="font-medium">Variance Assumption</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant="outline">{equalVar ? 'Equal Variance' : "Welch's (Unequal)"}</Badge>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50 bg-muted/20">
+                    <TableCell className="font-medium flex items-center gap-1.5">
+                      <Ruler className="size-3.5 text-muted-foreground shrink-0" />
+                      Cohen&apos;s d (Effect Size)
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <EffectSizeBadge d={cohensD} />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50">
+                    <TableCell className="font-medium">Significance (α = 0.05)</TableCell>
+                    <TableCell className="text-right">
+                      <ResultBadge pValue={result.pValue} />
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+              </div>
+              <GradientDivider />
+              <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} effectSizeText={effectSizeText} />
+            </CardContent>
+          </Card>
+
+          {/* Comparison Bar Chart */}
+          {chartData.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="size-4 text-amber-600 shrink-0" />
+                  Group Means Comparison
+                </CardTitle>
+                <CardDescription>
+                  Mean ± 1 standard deviation for each group
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full h-64">
+                  <BarChart
+                    data={chartData}
+                    width={undefined}
+                    height={250}
+                    margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value: number) => [value.toFixed(4), 'Mean']}
+                      contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+                    />
+                    <Legend />
+                    <ReferenceLine
+                      y={(chartData[0].mean + chartData[1].mean) / 2}
+                      stroke="#6b7280"
+                      strokeDasharray="5 5"
+                      label={{ value: 'Overall Mean', position: 'insideTopRight', fontSize: 10, fill: '#6b7280' }}
+                    />
+                    <Bar dataKey="mean" name="Mean" radius={[4, 4, 0, 0]}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                      <ErrorBar dataKey="error" width={4} strokeWidth={1.5} color="#374151" />
+                    </Bar>
+                  </BarChart>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   )
@@ -393,11 +675,13 @@ function PairedTTestPanel() {
   const [col1, setCol1] = useState('')
   const [col2, setCol2] = useState('')
   const [result, setResult] = useState<ReturnType<typeof pairedTTest> | null>(null)
+  const [cohensD, setCohensD] = useState<number>(NaN)
   const [error, setError] = useState('')
 
   const handleRun = () => {
     setError('')
     setResult(null)
+    setCohensD(NaN)
     if (!col1 || !col2) {
       setError('Please select both columns.')
       return
@@ -413,8 +697,17 @@ function PairedTTestPanel() {
       return
     }
     const minLen = Math.min(data1.length, data2.length)
-    setResult(pairedTTest(data1.slice(0, minLen), data2.slice(0, minLen)))
+    const d1 = data1.slice(0, minLen)
+    const d2 = data2.slice(0, minLen)
+    const testResult = pairedTTest(d1, d2)
+    setResult(testResult)
+    setCohensD(computeCohensDPaired(d1, d2))
   }
+
+  const effectSizeInterp = interpretCohensD(cohensD)
+  const effectSizeText = !isNaN(cohensD)
+    ? `Effect size: Cohen's d = ${cohensD.toFixed(4)} (${effectSizeInterp.label} effect)`
+    : undefined
 
   return (
     <div className="space-y-4">
@@ -480,9 +773,12 @@ function PairedTTestPanel() {
       {result && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Results <ResultBadge pValue={result.pValue} />
-            </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                Results <ResultBadge pValue={result.pValue} />
+              </CardTitle>
+              <PValueGauge pValue={result.pValue} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -494,23 +790,32 @@ function PairedTTestPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">t-Statistic</TableCell>
                   <TableCell className="text-right font-mono">{result.tStat}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">p-Value (two-tailed)</TableCell>
                   <TableCell className="text-right font-mono">{result.pValue}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">Degrees of Freedom</TableCell>
                   <TableCell className="text-right font-mono">{result.df}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">Mean Difference</TableCell>
                   <TableCell className="text-right font-mono">{result.meanDiff}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50 bg-muted/20">
+                  <TableCell className="font-medium flex items-center gap-1.5">
+                    <Ruler className="size-3.5 text-muted-foreground shrink-0" />
+                    Cohen&apos;s d (Effect Size)
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <EffectSizeBadge d={cohensD} />
+                  </TableCell>
+                </TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">Significance (α = 0.05)</TableCell>
                   <TableCell className="text-right">
                     <ResultBadge pValue={result.pValue} />
@@ -519,7 +824,8 @@ function PairedTTestPanel() {
               </TableBody>
             </Table>
             </div>
-            <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
+            <GradientDivider />
+            <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} effectSizeText={effectSizeText} />
           </CardContent>
         </Card>
       )}
@@ -653,9 +959,12 @@ function ZTestSection() {
       {result && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Results <ResultBadge pValue={result.pValue} />
-            </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                Results <ResultBadge pValue={result.pValue} />
+              </CardTitle>
+              <PValueGauge pValue={result.pValue} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -667,15 +976,15 @@ function ZTestSection() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">z-Statistic</TableCell>
                   <TableCell className="text-right font-mono">{result.zStat}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">p-Value (two-tailed)</TableCell>
                   <TableCell className="text-right font-mono">{result.pValue}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">Significance (α = 0.05)</TableCell>
                   <TableCell className="text-right">
                     <ResultBadge pValue={result.pValue} />
@@ -684,6 +993,7 @@ function ZTestSection() {
               </TableBody>
             </Table>
             </div>
+            <GradientDivider />
             <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
           </CardContent>
         </Card>
@@ -816,7 +1126,7 @@ function ChiSquareGoFSection() {
                 </TableHeader>
                 <TableBody>
                   {displayTable.map((row, i) => (
-                    <TableRow key={i}>
+                    <TableRow key={i} className="transition-colors hover:bg-muted/50">
                       <TableCell className="font-medium">{String(row.category)}</TableCell>
                       <TableCell className="text-right font-mono">{row.observed}</TableCell>
                       <TableCell className="text-right font-mono">{row.expected}</TableCell>
@@ -831,9 +1141,12 @@ function ChiSquareGoFSection() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                Test Results <ResultBadge pValue={result.pValue} />
-              </CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  Test Results <ResultBadge pValue={result.pValue} />
+                </CardTitle>
+                <PValueGauge pValue={result.pValue} />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -845,19 +1158,19 @@ function ChiSquareGoFSection() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50">
                     <TableCell className="font-medium">Chi-Square Statistic</TableCell>
                     <TableCell className="text-right font-mono">{result.chiStat}</TableCell>
                   </TableRow>
-                  <TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50">
                     <TableCell className="font-medium">p-Value</TableCell>
                     <TableCell className="text-right font-mono">{result.pValue}</TableCell>
                   </TableRow>
-                  <TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50">
                     <TableCell className="font-medium">Degrees of Freedom</TableCell>
                     <TableCell className="text-right font-mono">{result.df}</TableCell>
                   </TableRow>
-                  <TableRow>
+                  <TableRow className="transition-colors hover:bg-muted/50">
                     <TableCell className="font-medium">Significance (α = 0.05)</TableCell>
                     <TableCell className="text-right">
                       <ResultBadge pValue={result.pValue} />
@@ -866,6 +1179,7 @@ function ChiSquareGoFSection() {
                 </TableBody>
               </Table>
               </div>
+              <GradientDivider />
               <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
             </CardContent>
           </Card>
@@ -876,6 +1190,8 @@ function ChiSquareGoFSection() {
 }
 
 // ==================== ANOVA + Levene Section ====================
+const ANOVA_COLORS = ['#14b8a6', '#f59e0b', '#8b5cf6', '#f43f5e', '#06b6d4', '#84cc16', '#ec4899', '#6366f1']
+
 function ANOVASsection() {
   const { getNumericColumns, getCategoricalColumns, getColumnData, getCategoricalData } =
     useDataset()
@@ -885,12 +1201,16 @@ function ANOVASsection() {
   const [grpCol, setGrpCol] = useState('')
   const [anovaResult, setAnovaResult] = useState<ReturnType<typeof oneWayANOVA> | null>(null)
   const [leveneResult, setLeveneResult] = useState<ReturnType<typeof leveneTest> | null>(null)
+  const [anovaChartData, setAnovaChartData] = useState<{ name: string; mean: number; error: number[]; fill: string }[]>([])
+  const [overallMean, setOverallMean] = useState<number>(0)
   const [error, setError] = useState('')
 
   const handleRun = () => {
     setError('')
     setAnovaResult(null)
     setLeveneResult(null)
+    setAnovaChartData([])
+    setOverallMean(0)
     if (!numCol || !grpCol) {
       setError('Please select both a numeric and a grouping column.')
       return
@@ -926,6 +1246,20 @@ function ANOVASsection() {
       (_, i) => groupMap.get(groupNames[i])!.length >= 1
     )
     setAnovaResult(anova)
+
+    // Build ANOVA chart data
+    const chartData = groups.map((g, i) => {
+      const m = mean(g)
+      const sd = standardDeviation(g)
+      return {
+        name: groupNames[i] || `Group ${i + 1}`,
+        mean: Math.round(m * 1000) / 1000,
+        error: [Math.round(Math.max(0, m - sd) * 1000) / 1000, Math.round((m + sd) * 1000) / 1000],
+        fill: ANOVA_COLORS[i % ANOVA_COLORS.length],
+      }
+    })
+    setAnovaChartData(chartData)
+    setOverallMean(mean(numData.slice(0, minLen)))
 
     const lev = leveneTest(groups)
     ;(lev as typeof lev & { groupNames: string[] }).groupNames = groupNames.filter(
@@ -999,102 +1333,157 @@ function ANOVASsection() {
       </Card>
 
       {anovaResult && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              One-Way ANOVA Results <ResultBadge pValue={anovaResult.pValue} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Group Means */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Group Means</h4>
-                <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Group</TableHead>
-                      <TableHead className="text-right">Mean</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {anovaResult.groupMeans.map((m, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium">
-                          {groupNames[i] || `Group ${i + 1}`}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">{m}</TableCell>
+        <>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  One-Way ANOVA Results <ResultBadge pValue={anovaResult.pValue} />
+                </CardTitle>
+                <PValueGauge pValue={anovaResult.pValue} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Group Means */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Group Means</h4>
+                  <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Group</TableHead>
+                        <TableHead className="text-right">Mean</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {anovaResult.groupMeans.map((m, i) => (
+                        <TableRow key={i} className="transition-colors hover:bg-muted/50">
+                          <TableCell className="font-medium">
+                            {groupNames[i] || `Group ${i + 1}`}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">{m}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  </div>
                 </div>
-              </div>
 
-              {/* ANOVA Table */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
-                  ANOVA Summary Table
-                </h4>
-                <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Source</TableHead>
-                      <TableHead className="text-right">SS</TableHead>
-                      <TableHead className="text-right">df</TableHead>
-                      <TableHead className="text-right">MS</TableHead>
-                      <TableHead className="text-right">F</TableHead>
-                      <TableHead className="text-right">p-Value</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">Between Groups</TableCell>
-                      <TableCell className="text-right font-mono">{anovaResult.ssBetween}</TableCell>
-                      <TableCell className="text-right font-mono">{anovaResult.dfBetween}</TableCell>
-                      <TableCell className="text-right font-mono">{anovaResult.msBetween}</TableCell>
-                      <TableCell className="text-right font-mono" rowSpan={2}>
-                        {anovaResult.fStat}
-                      </TableCell>
-                      <TableCell className="text-right font-mono" rowSpan={2}>
-                        {anovaResult.pValue}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Within Groups</TableCell>
-                      <TableCell className="text-right font-mono">{anovaResult.ssWithin}</TableCell>
-                      <TableCell className="text-right font-mono">{anovaResult.dfWithin}</TableCell>
-                      <TableCell className="text-right font-mono">{anovaResult.msWithin}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Total</TableCell>
-                      <TableCell className="text-right font-mono">{anovaResult.ssTotal}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {anovaResult.dfBetween + anovaResult.dfWithin}
-                      </TableCell>
-                      <TableCell className="text-right">—</TableCell>
-                      <TableCell className="text-right">—</TableCell>
-                      <TableCell className="text-right">—</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                {/* ANOVA Table */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                    ANOVA Summary Table
+                  </h4>
+                  <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Source</TableHead>
+                        <TableHead className="text-right">SS</TableHead>
+                        <TableHead className="text-right">df</TableHead>
+                        <TableHead className="text-right">MS</TableHead>
+                        <TableHead className="text-right">F</TableHead>
+                        <TableHead className="text-right">p-Value</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow className="transition-colors hover:bg-muted/50">
+                        <TableCell className="font-medium">Between Groups</TableCell>
+                        <TableCell className="text-right font-mono">{anovaResult.ssBetween}</TableCell>
+                        <TableCell className="text-right font-mono">{anovaResult.dfBetween}</TableCell>
+                        <TableCell className="text-right font-mono">{anovaResult.msBetween}</TableCell>
+                        <TableCell className="text-right font-mono" rowSpan={2}>
+                          {anovaResult.fStat}
+                        </TableCell>
+                        <TableCell className="text-right font-mono" rowSpan={2}>
+                          {anovaResult.pValue}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow className="transition-colors hover:bg-muted/50">
+                        <TableCell className="font-medium">Within Groups</TableCell>
+                        <TableCell className="text-right font-mono">{anovaResult.ssWithin}</TableCell>
+                        <TableCell className="text-right font-mono">{anovaResult.dfWithin}</TableCell>
+                        <TableCell className="text-right font-mono">{anovaResult.msWithin}</TableCell>
+                      </TableRow>
+                      <TableRow className="transition-colors hover:bg-muted/50">
+                        <TableCell className="font-medium">Total</TableCell>
+                        <TableCell className="text-right font-mono">{anovaResult.ssTotal}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {anovaResult.dfBetween + anovaResult.dfWithin}
+                        </TableCell>
+                        <TableCell className="text-right">—</TableCell>
+                        <TableCell className="text-right">—</TableCell>
+                        <TableCell className="text-right">—</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                  </div>
                 </div>
               </div>
-            </div>
-            <ConclusionBox conclusion={anovaResult.conclusion} pValue={anovaResult.pValue} />
-          </CardContent>
-        </Card>
+              <GradientDivider />
+              <ConclusionBox conclusion={anovaResult.conclusion} pValue={anovaResult.pValue} />
+            </CardContent>
+          </Card>
+
+          {/* ANOVA Group Comparison Chart */}
+          {anovaChartData.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="size-4 text-violet-600 shrink-0" />
+                  Group Means Comparison
+                </CardTitle>
+                <CardDescription>
+                  Mean ± 1 standard deviation for each group with overall mean reference line
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full h-72">
+                  <BarChart
+                    data={anovaChartData}
+                    width={undefined}
+                    height={280}
+                    margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip
+                      formatter={(value: number) => [value.toFixed(4), 'Mean']}
+                      contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+                    />
+                    <Legend />
+                    <ReferenceLine
+                      y={Math.round(overallMean * 1000) / 1000}
+                      stroke="#6b7280"
+                      strokeDasharray="5 5"
+                      label={{ value: `Overall Mean (${(overallMean).toFixed(2)})`, position: 'insideTopRight', fontSize: 10, fill: '#6b7280' }}
+                    />
+                    <Bar dataKey="mean" name="Mean" radius={[4, 4, 0, 0]}>
+                      {anovaChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                      <ErrorBar dataKey="error" width={4} strokeWidth={1.5} color="#374151" />
+                    </Bar>
+                  </BarChart>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {leveneResult && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Levene&apos;s Test (Equality of Variances){' '}
-              <ResultBadge pValue={leveneResult.pValue} />
-            </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                Levene&apos;s Test (Equality of Variances){' '}
+                <ResultBadge pValue={leveneResult.pValue} />
+              </CardTitle>
+              <PValueGauge pValue={leveneResult.pValue} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -1106,23 +1495,23 @@ function ANOVASsection() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">F-Statistic</TableCell>
                   <TableCell className="text-right font-mono">{leveneResult.fStat}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">p-Value</TableCell>
                   <TableCell className="text-right font-mono">{leveneResult.pValue}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">df₁ (Between)</TableCell>
                   <TableCell className="text-right font-mono">{leveneResult.df1}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">df₂ (Within)</TableCell>
                   <TableCell className="text-right font-mono">{leveneResult.df2}</TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">Significance (α = 0.05)</TableCell>
                   <TableCell className="text-right">
                     <ResultBadge pValue={leveneResult.pValue} />
@@ -1131,6 +1520,7 @@ function ANOVASsection() {
               </TableBody>
             </Table>
             </div>
+            <GradientDivider />
             <ConclusionBox conclusion={leveneResult.conclusion} pValue={leveneResult.pValue} />
           </CardContent>
         </Card>

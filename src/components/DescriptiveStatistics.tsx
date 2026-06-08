@@ -47,6 +47,8 @@ import {
   GitCompare,
   Activity,
   ShieldCheck,
+  Info,
+  AudioWaveform,
 } from 'lucide-react';
 import { useDataset } from '@/hooks/useDataset';
 import {
@@ -222,6 +224,198 @@ function DistributionCurveSVG({ shape, color }: { shape: DistributionShape; colo
       {/* Baseline */}
       <line x1={padX} y1={padY + plotH} x2={padX + plotW} y2={padY + plotH} stroke={color} strokeWidth={1} strokeOpacity={0.3} />
     </svg>
+  );
+}
+
+// Percentile helper function
+function percentile(arr: number[], p: number): number {
+  if (arr.length === 0) return NaN;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const idx = (p / 100) * (sorted.length - 1);
+  const lower = Math.floor(idx);
+  const upper = Math.ceil(idx);
+  if (lower === upper) return sorted[lower];
+  return sorted[lower] + (idx - lower) * (sorted[upper] - sorted[lower]);
+}
+
+// Custom SVG Violin Plot component
+function ViolinPlotChart({ summary, columnData }: { summary: ColumnSummary; columnData: number[] }) {
+  const { min, max, q1, q3, median: med } = summary;
+
+  const chartWidth = 500;
+  const chartHeight = 240;
+  const padding = 60;
+  const plotLeft = padding;
+  const plotRight = chartWidth - padding;
+  const plotWidth = plotRight - plotLeft;
+  const centerY = chartHeight / 2 - 10;
+  const maxHalfWidth = 50;
+
+  const dataMin = min;
+  const dataMax = max;
+  const dataRange = dataMax - dataMin || 1;
+
+  const scale = (val: number) => plotLeft + ((val - dataMin) / dataRange) * plotWidth;
+
+  // Compute density using histogram bins
+  const bins = histogramData(columnData);
+  const maxFreq = Math.max(...bins.map((b) => b.frequency), 1);
+
+  // Build violin shape points (top half, then bottom half mirrored)
+  const topPoints: string[] = [];
+  const bottomPoints: string[] = [];
+
+  bins.forEach((bin) => {
+    const x = scale(bin.midpoint);
+    const halfW = (bin.frequency / maxFreq) * maxHalfWidth;
+    topPoints.push(`${x.toFixed(1)},${(centerY - halfW).toFixed(1)}`);
+    bottomPoints.push(`${x.toFixed(1)},${(centerY + halfW).toFixed(1)}`);
+  });
+
+  // If we have bins, build the path
+  if (topPoints.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+        Insufficient data for violin plot
+      </div>
+    );
+  }
+
+  // Violin outline path: start from left top, go right, then bottom right to left, close
+  const bottomReversed = [...bottomPoints].reverse();
+  const violinPath = `M ${topPoints[0]} ${topPoints.slice(1).map((p) => `L ${p}`).join(' ')} L ${bottomReversed[0]} ${bottomReversed.slice(1).map((p) => `L ${p}`).join(' ')} Z`;
+
+  const xQ1 = scale(q1);
+  const xQ3 = scale(q3);
+  const xMedian = scale(med);
+
+  return (
+    <div className="w-full overflow-x-auto">
+      <svg
+        viewBox={`0 0 ${chartWidth} ${chartHeight + 20}`}
+        className="w-full min-w-[300px]"
+        role="img"
+        aria-label={`Violin plot for ${summary.name}`}
+      >
+        {/* X-axis line */}
+        <line
+          x1={plotLeft}
+          y1={chartHeight - 30}
+          x2={plotRight}
+          y2={chartHeight - 30}
+          className="stroke-muted-foreground"
+          strokeWidth={1}
+        />
+
+        {/* X-axis ticks */}
+        {[dataMin, q1, med, q3, dataMax].map((val, i) => (
+          <g key={i}>
+            <line
+              x1={scale(val)}
+              y1={chartHeight - 34}
+              x2={scale(val)}
+              y2={chartHeight - 26}
+              className="stroke-muted-foreground"
+              strokeWidth={1}
+            />
+            <text
+              x={scale(val)}
+              y={chartHeight - 15}
+              textAnchor="middle"
+              fontSize={10}
+              className="fill-muted-foreground"
+            >
+              {formatNumber(val, 2)}
+            </text>
+          </g>
+        ))}
+
+        {/* X-axis label */}
+        <text
+          x={chartWidth / 2}
+          y={chartHeight + 15}
+          textAnchor="middle"
+          fontSize={12}
+          className="fill-muted-foreground"
+        >
+          Value
+        </text>
+
+        {/* Center line */}
+        <line
+          x1={plotLeft}
+          y1={centerY}
+          x2={plotRight}
+          y2={centerY}
+          stroke={COLORS.teal}
+          strokeWidth={1}
+          strokeOpacity={0.3}
+        />
+
+        {/* Violin shape */}
+        <path
+          d={violinPath}
+          fill={COLORS.teal}
+          fillOpacity={0.2}
+          stroke={COLORS.teal}
+          strokeWidth={2}
+        />
+
+        {/* IQR bar (thin rectangle inside violin) */}
+        <rect
+          x={xQ1}
+          y={centerY - 4}
+          width={Math.max(xQ3 - xQ1, 1)}
+          height={8}
+          fill={COLORS.teal}
+          fillOpacity={0.5}
+          rx={2}
+        />
+
+        {/* Q1 marker */}
+        <line
+          x1={xQ1}
+          y1={centerY - 12}
+          x2={xQ1}
+          y2={centerY + 12}
+          stroke={COLORS.teal}
+          strokeWidth={2}
+          strokeDasharray="3,2"
+        />
+
+        {/* Q3 marker */}
+        <line
+          x1={xQ3}
+          y1={centerY - 12}
+          x2={xQ3}
+          y2={centerY + 12}
+          stroke={COLORS.teal}
+          strokeWidth={2}
+          strokeDasharray="3,2"
+        />
+
+        {/* Median dot */}
+        <circle
+          cx={xMedian}
+          cy={centerY}
+          r={5}
+          fill={COLORS.emerald}
+          stroke="white"
+          strokeWidth={2}
+        />
+
+        {/* Labels */}
+        <text x={xQ1} y={centerY - 16} textAnchor="middle" fontSize={9} fill={COLORS.teal} fontWeight={600}>
+          Q1
+        </text>
+        <text x={xMedian} y={centerY - 18} textAnchor="middle" fontSize={9} fill={COLORS.emerald} fontWeight={600}>
+          Med
+        </text>
+        <text x={xQ3} y={centerY - 16} textAnchor="middle" fontSize={9} fill={COLORS.teal} fontWeight={600}>
+          Q3
+        </text>
+      </svg>
+    </div>
   );
 }
 
@@ -463,13 +657,17 @@ export default function DescriptiveStatistics() {
     return computeColumnSummary(activeNumericCol, data);
   }, [activeNumericCol, dataset, getColumnData]);
 
+  // Column data for selected numeric column (used by violin plot & histogram)
+  const selectedColumnData = useMemo(() => {
+    if (!activeNumericCol || !dataset) return [];
+    return getColumnData(activeNumericCol);
+  }, [activeNumericCol, dataset, getColumnData]);
+
   // Histogram data
   const histData = useMemo(() => {
-    if (!activeNumericCol || !dataset) return [];
-    const data = getColumnData(activeNumericCol);
-    if (data.length === 0) return [];
-    return histogramData(data);
-  }, [activeNumericCol, dataset, getColumnData]);
+    if (selectedColumnData.length === 0) return [];
+    return histogramData(selectedColumnData);
+  }, [selectedColumnData]);
 
   // Outlier data
   const outlierInfo = useMemo(() => {
@@ -798,8 +996,8 @@ export default function DescriptiveStatistics() {
                   <div key={group.category}>
                     {/* Category Header */}
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${catConfig.iconBg}`}>
-                        <span className={`text-xs font-bold ${catConfig.iconColor}`}>
+                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${catConfig.iconBg}`}>
+                        <span className={`text-sm font-bold ${catConfig.iconColor}`}>
                           {group.category === 'centralTendency' ? 'μ' : group.category === 'dispersion' ? 'σ' : group.category === 'position' ? 'Q' : 'S'}
                         </span>
                       </span>
@@ -811,7 +1009,7 @@ export default function DescriptiveStatistics() {
                       {group.items.map((row) => (
                         <div
                           key={row.label}
-                          className={`rounded-lg border border-l-4 ${catConfig.border} bg-gradient-to-br ${catConfig.gradient} p-3 min-w-0`}
+                          className={`rounded-lg border border-l-4 ${catConfig.border} bg-gradient-to-br ${catConfig.gradient} p-3 min-w-0 transition-all duration-200 hover:scale-[1.02] hover:shadow-md cursor-default`}
                         >
                           <div className="flex items-center gap-1.5 mb-1">
                             <span className={catConfig.iconColor}>{row.icon}</span>
@@ -826,6 +1024,52 @@ export default function DescriptiveStatistics() {
                   </div>
                 );
               })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Interpretation Card */}
+      {summary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Info className="h-4 w-4 text-teal-600 shrink-0" />
+              Quick Interpretation
+            </CardTitle>
+            <CardDescription>
+              Plain-English summary of the selected column&apos;s statistics
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-xl border p-5 bg-gradient-to-br from-teal-50/80 to-emerald-50/40 dark:from-teal-900/15 dark:to-emerald-900/10">
+              <p className="text-sm text-foreground leading-relaxed">
+                The column <span className="font-semibold text-teal-700 dark:text-teal-400">{summary.name}</span> has{' '}
+                <span className="font-semibold">{summary.count} values</span> with a mean of{' '}
+                <span className="font-semibold font-mono">{formatNumber(summary.mean)}</span>{' '}
+                (SD = {formatNumber(summary.stdDev)}).{' '}
+                {distributionShape && (
+                  <>
+                    The distribution is{' '}
+                    <span className="font-semibold">{distributionShape.toLowerCase()}</span>
+                    {distributionShape === 'Normal' && ' (approximately symmetric)'}
+                    {distributionShape === 'Right-Skewed' && ' (tail extends toward higher values)'}
+                    {distributionShape === 'Left-Skewed' && ' (tail extends toward lower values)'}
+                    {distributionShape === 'Uniform' && ' (relatively flat across the range)'}
+                    .{' '}
+                  </>
+                )}
+                {outlierInfo.outliers.length > 0 ? (
+                  <>
+                    <span className="font-semibold text-rose-600 dark:text-rose-400">{outlierInfo.outliers.length} outlier{outlierInfo.outliers.length !== 1 ? 's' : ''}</span>{' '}
+                    detected using the IQR method.
+                  </>
+                ) : (
+                  'No outliers detected using the IQR method.'
+                )}{' '}
+                The data ranges from {formatNumber(summary.min)} to {formatNumber(summary.max)}{' '}
+                (range = {formatNumber(summary.range)}).
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -873,6 +1117,80 @@ export default function DescriptiveStatistics() {
                   </p>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Percentile Table Card */}
+      {summary && selectedColumnData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Activity className="h-4 w-4 text-teal-600 shrink-0" />
+              Percentile Table &mdash; {summary.name}
+            </CardTitle>
+            <CardDescription>
+              Key percentiles showing data distribution at various thresholds
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">Percentile</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">Label</th>
+                    <th className="text-right py-2 px-3 text-muted-foreground font-medium">Value</th>
+                    <th className="py-2 px-3 text-muted-foreground font-medium w-[40%]">Position</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { p: 1, label: 'P1', name: '1st Percentile' },
+                    { p: 5, label: 'P5', name: '5th Percentile' },
+                    { p: 10, label: 'P10', name: '10th Percentile' },
+                    { p: 25, label: 'Q1', name: '25th (Q1)' },
+                    { p: 50, label: 'Median', name: '50th (Median)' },
+                    { p: 75, label: 'Q3', name: '75th (Q3)' },
+                    { p: 90, label: 'P90', name: '90th Percentile' },
+                    { p: 95, label: 'P95', name: '95th Percentile' },
+                    { p: 99, label: 'P99', name: '99th Percentile' },
+                  ].map((item, idx) => {
+                    const val = percentile(selectedColumnData, item.p);
+                    const isQuartile = item.p === 25 || item.p === 50 || item.p === 75;
+                    const progressPct = Number.isFinite(val) && summary.range > 0
+                      ? ((val - summary.min) / summary.range) * 100
+                      : 0;
+                    return (
+                      <tr
+                        key={item.p}
+                        className={`border-b last:border-b-0 ${isQuartile ? 'bg-teal-50/50 dark:bg-teal-900/10' : idx % 2 === 0 ? 'bg-muted/20' : ''}`}
+                      >
+                        <td className="py-2 px-3 font-mono text-xs">{item.label}</td>
+                        <td className="py-2 px-3 text-muted-foreground">{item.name}</td>
+                        <td className="py-2 px-3 text-right font-mono font-semibold">
+                          {formatNumber(val, 4)}
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="relative h-4 bg-muted/40 dark:bg-slate-800/50 rounded-full overflow-hidden">
+                            <div
+                              className="absolute top-0 left-0 h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400 dark:from-teal-500 dark:to-emerald-500"
+                              style={{ width: `${Math.max(0, Math.min(100, progressPct))}%` }}
+                            />
+                            {isQuartile && (
+                              <div
+                                className="absolute top-0 h-full w-0.5 bg-emerald-600 dark:bg-emerald-400"
+                                style={{ left: `${Math.max(0, Math.min(100, progressPct))}%` }}
+                              />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
@@ -985,6 +1303,40 @@ export default function DescriptiveStatistics() {
                     Outlier
                   </span>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Violin Plot */}
+        {summary && selectedColumnData.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <AudioWaveform className="h-4 w-4 text-teal-600 shrink-0" />
+                Violin Plot
+              </CardTitle>
+              <CardDescription>
+                Density distribution with quartile markers for {activeNumericCol}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[220px] sm:h-[240px] w-full flex items-center justify-center">
+                <ViolinPlotChart summary={summary} columnData={selectedColumnData} />
+              </div>
+              <div className="flex flex-wrap gap-3 mt-4 text-xs text-muted-foreground justify-center">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 rounded-sm bg-teal-500/20 border border-teal-500" />
+                  Density Shape
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-3 h-0.5 bg-teal-500 opacity-50" />
+                  IQR Range
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white dark:border-slate-900" />
+                  Median
+                </span>
               </div>
             </CardContent>
           </Card>

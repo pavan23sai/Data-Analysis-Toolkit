@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { useDataset } from '@/hooks/useDataset';
 import { computeColumnSummary, mean, standardDeviation } from '@/lib/statistics';
@@ -27,6 +27,11 @@ import {
   Moon,
   Keyboard,
   Download,
+  Rows3,
+  Columns3,
+  Hash,
+  Tag,
+  Info,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,6 +41,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 
 const sections = [
   { id: 'upload', label: 'Data Upload', icon: Upload, color: 'from-teal-500 to-emerald-600', shortLabel: 'Upload' },
@@ -47,6 +53,90 @@ const sections = [
   { id: 'parametric', label: 'Parametric Tests', icon: FlaskConical, color: 'from-orange-500 to-red-500', shortLabel: 'Parametric' },
   { id: 'nonparametric', label: 'Non-Parametric Tests', icon: Shuffle, color: 'from-fuchsia-500 to-pink-500', shortLabel: 'Non-Param' },
 ];
+
+// Count-up animation hook using ref to avoid sync setState in effect
+function useCountUp(target: number, duration: number = 800, enabled: boolean = true) {
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+
+  useEffect(() => {
+    if (!enabled) {
+      countRef.current = 0;
+      return;
+    }
+    if (target === 0) {
+      countRef.current = 0;
+      return;
+    }
+
+    let startTime: number | null = null;
+    let animationId: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      // Ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const newVal = Math.round(eased * target);
+      countRef.current = newVal;
+      setCount(newVal);
+      if (progress < 1) {
+        animationId = requestAnimationFrame(animate);
+      }
+    };
+
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
+  }, [target, duration, enabled]);
+
+  return count;
+}
+
+// Animated stat card component - uses CSS animations instead of JS state for entrance
+function AnimatedStatCard({
+  icon: Icon,
+  value,
+  label,
+  gradientFrom,
+  gradientTo,
+  iconBg,
+  delay,
+  visible,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  value: number;
+  label: string;
+  gradientFrom: string;
+  gradientTo: string;
+  iconBg: string;
+  delay: number;
+  visible: boolean;
+}) {
+  const count = useCountUp(value, 800, visible);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-4 animate-[fadeInSlideUp_0.5s_ease-out_forwards]"
+      style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
+    >
+      {/* Subtle gradient background */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} ${gradientTo} opacity-[0.07] dark:opacity-[0.12]`} />
+      <div className="relative flex items-center gap-3">
+        <div className={`shrink-0 w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center`}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <div className="text-2xl font-bold tabular-nums tracking-tight text-slate-800 dark:text-slate-100">
+            {count.toLocaleString()}
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">{label}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -70,8 +160,21 @@ export default function Home() {
   const [fadeKey, setFadeKey] = useState(0);
   const [isFading, setIsFading] = useState(false);
   const dataset = useDataset(s => s.dataset);
-  const { getNumericColumns, getColumnData } = useDataset();
+  const { getNumericColumns, getColumnData, getCategoricalColumns } = useDataset();
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Compute stats for dashboard cards
+  const dashboardStats = useMemo(() => {
+    if (!dataset) return null;
+    const numericCols = getNumericColumns();
+    const catCols = getCategoricalColumns();
+    return {
+      totalRows: dataset.rows.length,
+      totalCols: dataset.headers.length,
+      numericCols: numericCols.length,
+      categoricalCols: catCols.length,
+    };
+  }, [dataset, getNumericColumns, getCategoricalColumns]);
 
   // Export All Results handler
   const handleExportAll = useCallback(() => {
@@ -208,15 +311,26 @@ export default function Home() {
             backgroundSize: '20px 20px',
           }}
         />
+        {/* Gradient shine effect on header border-bottom when data is loaded */}
+        {dataset && (
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-teal-500 to-transparent animate-pulse" />
+        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20 ${dataset ? 'animate-pulse' : ''}`}>
                 <BarChart3 className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Data Analysis Toolkit</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Statistical Analysis Made Simple</p>
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Data Analysis Toolkit</h1>
+                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-mono border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 shrink-0">
+                      v1.0
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Statistical Analysis Made Simple</p>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -332,6 +446,66 @@ export default function Home() {
         </div>
       </nav>
 
+      {/* Data Overview Dashboard Cards - visible when dataset is loaded */}
+      {dashboardStats && (
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <AnimatedStatCard
+              icon={Rows3}
+              value={dashboardStats.totalRows}
+              label="Total Rows"
+              gradientFrom="from-teal-50"
+              gradientTo="to-teal-100/50"
+              iconBg="bg-gradient-to-br from-teal-500 to-teal-600"
+              delay={0}
+              visible={!!dataset}
+            />
+            <AnimatedStatCard
+              icon={Columns3}
+              value={dashboardStats.totalCols}
+              label="Total Columns"
+              gradientFrom="from-emerald-50"
+              gradientTo="to-emerald-100/50"
+              iconBg="bg-gradient-to-br from-emerald-500 to-emerald-600"
+              delay={80}
+              visible={!!dataset}
+            />
+            <AnimatedStatCard
+              icon={Hash}
+              value={dashboardStats.numericCols}
+              label="Numeric Columns"
+              gradientFrom="from-amber-50"
+              gradientTo="to-amber-100/50"
+              iconBg="bg-gradient-to-br from-amber-500 to-amber-600"
+              delay={160}
+              visible={!!dataset}
+            />
+            <AnimatedStatCard
+              icon={Tag}
+              value={dashboardStats.categoricalCols}
+              label="Categorical Columns"
+              gradientFrom="from-rose-50"
+              gradientTo="to-rose-100/50"
+              iconBg="bg-gradient-to-br from-rose-500 to-rose-600"
+              delay={240}
+              visible={!!dataset}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Welcome state info banner - shows when upload tab is active and no dataset */}
+      {activeSection === 'upload' && !dataset && (
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4">
+          <div className="flex items-start gap-3 rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/50 px-4 py-3">
+            <Info className="w-4 h-4 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" />
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Start by uploading a CSV file or loading the sample dataset to begin your analysis
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Main Content with fade animation */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
         <div
@@ -342,19 +516,58 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-auto bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-              <BookOpen className="w-4 h-4" />
-              <span>Data Analysis Toolkit — Course Assignment</span>
+      {/* Enhanced Footer */}
+      <footer className="mt-auto bg-white dark:bg-slate-900 relative">
+        {/* Gradient top border */}
+        <div className="h-[2px] bg-gradient-to-r from-teal-500/40 via-emerald-500/40 to-teal-500/40" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8">
+            {/* Left column - Project info */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Data Analysis Toolkit</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                A comprehensive statistical analysis toolkit for data exploration, hypothesis testing, and probability distributions.
+              </p>
             </div>
-            <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
-              <span>Built with Next.js & React</span>
-              <span>•</span>
-              <span>Powered by shadcn/ui & Recharts</span>
+
+            {/* Center column - Tech stack */}
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">Tech Stack</span>
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                  Next.js
+                </Badge>
+                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                  React
+                </Badge>
+                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                  shadcn/ui
+                </Badge>
+                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                  Recharts
+                </Badge>
+              </div>
             </div>
+
+            {/* Right column - Quick links */}
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">Quick Links</span>
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <Keyboard className="w-3.5 h-3.5" />
+                <span>Keyboard Shortcuts: <kbd className="px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono text-[10px]">Alt</kbd> + <kbd className="px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono text-[10px]">1</kbd>–<kbd className="px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono text-[10px]">8</kbd></span>
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-4 bg-slate-200/60 dark:bg-slate-700/60" />
+
+          <div className="flex items-center justify-center">
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              © {new Date().getFullYear()} Data Analysis Toolkit — Course Assignment
+            </p>
           </div>
         </div>
       </footer>

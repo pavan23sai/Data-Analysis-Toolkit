@@ -121,6 +121,28 @@
   }
 }
 
+/* Fade-in animation for number displays */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fade-in slide-up animation for stat cards */
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Custom scrollbar-hide utility */
 .scrollbar-hide {
   -ms-overflow-style: none;

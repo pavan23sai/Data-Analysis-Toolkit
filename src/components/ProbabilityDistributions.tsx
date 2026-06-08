@@ -106,8 +106,8 @@ function BinomialDistribution() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <ParamSlider label="n (trials)" value={n} min={1} max={100} step={1} onChange={setN} symbol="n =" />
-        <ParamSlider label="p (probability)" value={p} min={0} max={1} step={0.01} onChange={setP} symbol="p =" />
+        <ParamSlider label="(trials)" value={n} min={1} max={100} step={1} onChange={setN} symbol="n =" />
+        <ParamSlider label="(probability)" value={p} min={0} max={1} step={0.01} onChange={setP} symbol="p =" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -173,7 +173,7 @@ function BernoulliDistribution() {
 
   return (
     <div className="space-y-6">
-      <ParamSlider label="p (probability of success)" value={p} min={0} max={1} step={0.01} onChange={setP} symbol="p =" />
+      <ParamSlider label="(probability of success)" value={p} min={0} max={1} step={0.01} onChange={setP} symbol="p =" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -238,7 +238,7 @@ function PoissonDistribution() {
 
   return (
     <div className="space-y-6">
-      <ParamSlider label="λ (rate)" value={lambda} min={0.1} max={30} step={0.1} onChange={setLambda} symbol="λ =" />
+      <ParamSlider label="(rate)" value={lambda} min={0.1} max={30} step={0.1} onChange={setLambda} symbol="λ =" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -305,8 +305,8 @@ function NormalDistribution() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <ParamSlider label="μ (mean)" value={mu} min={-10} max={10} step={0.1} onChange={setMu} symbol="μ =" />
-        <ParamSlider label="σ (std dev)" value={sigma} min={0.1} max={5} step={0.1} onChange={setSigma} symbol="σ =" />
+        <ParamSlider label="(mean)" value={mu} min={-10} max={10} step={0.1} onChange={setMu} symbol="μ =" />
+        <ParamSlider label="(std dev)" value={sigma} min={0.1} max={5} step={0.1} onChange={setSigma} symbol="σ =" />
       </div>
 
       <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
@@ -382,7 +382,7 @@ function ExponentialDistribution() {
 
   return (
     <div className="space-y-6">
-      <ParamSlider label="λ (rate)" value={lambda} min={0.1} max={5} step={0.1} onChange={setLambda} symbol="λ =" />
+      <ParamSlider label="(rate)" value={lambda} min={0.1} max={5} step={0.1} onChange={setLambda} symbol="λ =" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -451,8 +451,8 @@ function UniformDistribution() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <ParamSlider label="a (min)" value={a} min={-20} max={19} step={0.5} onChange={setA} symbol="a =" />
-        <ParamSlider label="b (max)" value={b} min={a + 0.1} max={20} step={0.5} onChange={setB} symbol="b =" />
+        <ParamSlider label="(min)" value={a} min={-20} max={19} step={0.5} onChange={setA} symbol="a =" />
+        <ParamSlider label="(max)" value={b} min={a + 0.1} max={20} step={0.5} onChange={setB} symbol="b =" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -550,8 +550,8 @@ function EmpiricalRuleSection() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <ParamSlider label="μ (mean)" value={mu} min={-10} max={10} step={0.1} onChange={setMu} symbol="μ =" />
-        <ParamSlider label="σ (std dev)" value={sigma} min={0.1} max={5} step={0.1} onChange={setSigma} symbol="σ =" />
+        <ParamSlider label="(mean)" value={mu} min={-10} max={10} step={0.1} onChange={setMu} symbol="μ =" />
+        <ParamSlider label="(std dev)" value={sigma} min={0.1} max={5} step={0.1} onChange={setSigma} symbol="σ =" />
       </div>
 
       <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
@@ -739,27 +739,27 @@ function DistConfigPanel({
 
         {config.type === 'normal' && (
           <>
-            <ParamSlider label="μ (mean)" value={config.params.mu ?? 0} min={-10} max={10} step={0.1} onChange={(v) => updateParam('mu', v)} symbol="μ =" />
-            <ParamSlider label="σ (std dev)" value={config.params.sigma ?? 1} min={0.1} max={5} step={0.1} onChange={(v) => updateParam('sigma', v)} symbol="σ =" />
+            <ParamSlider label="(mean)" value={config.params.mu ?? 0} min={-10} max={10} step={0.1} onChange={(v) => updateParam('mu', v)} symbol="μ =" />
+            <ParamSlider label="(std dev)" value={config.params.sigma ?? 1} min={0.1} max={5} step={0.1} onChange={(v) => updateParam('sigma', v)} symbol="σ =" />
           </>
         )}
         {config.type === 'exponential' && (
-          <ParamSlider label="λ (rate)" value={config.params.lambda ?? 1} min={0.1} max={5} step={0.1} onChange={(v) => updateParam('lambda', v)} symbol="λ =" />
+          <ParamSlider label="(rate)" value={config.params.lambda ?? 1} min={0.1} max={5} step={0.1} onChange={(v) => updateParam('lambda', v)} symbol="λ =" />
         )}
         {config.type === 'uniform' && (
           <>
-            <ParamSlider label="a (min)" value={config.params.a ?? 0} min={-20} max={19} step={0.5} onChange={(v) => updateParam('a', v)} symbol="a =" />
-            <ParamSlider label="b (max)" value={config.params.b ?? 10} min={(config.params.a ?? 0) + 0.1} max={20} step={0.5} onChange={(v) => updateParam('b', v)} symbol="b =" />
+            <ParamSlider label="(min)" value={config.params.a ?? 0} min={-20} max={19} step={0.5} onChange={(v) => updateParam('a', v)} symbol="a =" />
+            <ParamSlider label="(max)" value={config.params.b ?? 10} min={(config.params.a ?? 0) + 0.1} max={20} step={0.5} onChange={(v) => updateParam('b', v)} symbol="b =" />
           </>
         )}
         {config.type === 'binomial' && (
           <>
-            <ParamSlider label="n (trials)" value={config.params.n ?? 20} min={1} max={100} step={1} onChange={(v) => updateParam('n', v)} symbol="n =" />
-            <ParamSlider label="p (probability)" value={config.params.p ?? 0.5} min={0} max={1} step={0.01} onChange={(v) => updateParam('p', v)} symbol="p =" />
+            <ParamSlider label="(trials)" value={config.params.n ?? 20} min={1} max={100} step={1} onChange={(v) => updateParam('n', v)} symbol="n =" />
+            <ParamSlider label="(probability)" value={config.params.p ?? 0.5} min={0} max={1} step={0.01} onChange={(v) => updateParam('p', v)} symbol="p =" />
           </>
         )}
         {config.type === 'poisson' && (
-          <ParamSlider label="λ (rate)" value={config.params.lambda ?? 5} min={0.1} max={30} step={0.1} onChange={(v) => updateParam('lambda', v)} symbol="λ =" />
+          <ParamSlider label="(rate)" value={config.params.lambda ?? 5} min={0.1} max={30} step={0.1} onChange={(v) => updateParam('lambda', v)} symbol="λ =" />
         )}
       </CardContent>
     </Card>

@@ -128,10 +128,10 @@ function BoxplotChart({ summary, outliers }: { summary: ColumnSummary; outliers:
   }));
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-auto">
       <svg
         viewBox={`0 0 ${chartWidth} ${chartHeight + 40}`}
-        className="w-full"
+        className="w-full min-w-[300px]"
         role="img"
         aria-label={`Boxplot for ${summary.name}: Min=${formatNumber(min)}, Q1=${formatNumber(q1)}, Median=${formatNumber(med)}, Q3=${formatNumber(q3)}, Max=${formatNumber(max)}`}
       >
@@ -418,16 +418,17 @@ export default function DescriptiveStatistics() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">
+          <div className="flex flex-col gap-4">
+            {/* Numeric Column Selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <label className="text-sm font-medium text-foreground whitespace-nowrap min-w-0">
                 Numeric Column
               </label>
               <Select
                 value={activeNumericCol}
                 onValueChange={setSelectedNumericCol}
               >
-                <SelectTrigger className="w-[220px]">
+                <SelectTrigger className="w-full sm:w-[220px]">
                   <SelectValue placeholder="Select column..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -439,16 +440,18 @@ export default function DescriptiveStatistics() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Categorical Column Selector */}
             {categoricalColumns.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <label className="text-sm font-medium text-foreground whitespace-nowrap min-w-0">
                   Categorical Column
                 </label>
                 <Select
                   value={activeCategoricalCol}
                   onValueChange={setSelectedCategoricalCol}
                 >
-                  <SelectTrigger className="w-[220px]">
+                  <SelectTrigger className="w-full sm:w-[220px]">
                     <SelectValue placeholder="Select column..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -461,6 +464,8 @@ export default function DescriptiveStatistics() {
                 </Select>
               </div>
             )}
+
+            {/* Info Badges */}
             {summary && (
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="secondary" className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300">
@@ -495,29 +500,23 @@ export default function DescriptiveStatistics() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="max-h-96 custom-scrollbar">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[180px]">Measure</TableHead>
-                    <TableHead>Value</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {summaryRows.map((row) => (
-                    <TableRow key={row.label}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {row.icon}
-                          {row.label}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono">{row.value}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
+            {/* Responsive grid of stat cards instead of a table that can overflow */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {summaryRows.map((row) => (
+                <div
+                  key={row.label}
+                  className="rounded-lg border bg-muted/30 dark:bg-slate-800/50 p-3 min-w-0"
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    {row.icon}
+                    <span className="text-xs text-muted-foreground truncate">{row.label}</span>
+                  </div>
+                  <p className="text-sm font-semibold font-mono truncate" title={row.value}>
+                    {row.value}
+                  </p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -537,7 +536,7 @@ export default function DescriptiveStatistics() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[280px] sm:h-[320px] w-full">
+              <div className="h-[280px] sm:h-[320px] w-full overflow-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={histData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -648,7 +647,7 @@ export default function DescriptiveStatistics() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] sm:h-[360px] w-full">
+            <div className="h-[300px] sm:h-[360px] w-full overflow-hidden">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={categoricalFrequency.slice(0, 20)}

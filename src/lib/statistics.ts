@@ -620,7 +620,7 @@ export function shapiroWilkTest(data: number[]): { statistic: number; pValue: nu
   
   if (denominator === 0) return { statistic: 1, pValue: 1, conclusion: 'All values are identical' };
   
-  const W = (numerator * numerator) / denominator;
+  const W = Math.min(1, (numerator * numerator) / denominator);
   
   // Approximate p-value using Royston's method
   const pValue = shapiroWilkPValue(W, n);
@@ -664,6 +664,9 @@ function shapiroWilkCoefficients(n: number): number[] | null {
 
 function shapiroWilkPValue(W: number, n: number): number {
   // Royston's approximation (1992) for the Shapiro-Wilk p-value
+  // If W is very close to 1, data is clearly normal - fail to reject
+  if (W >= 0.999) return 0.999;
+
   if (n < 4) {
     // For n=3, use exact distribution
     const pi6 = 6 / Math.PI;
@@ -727,7 +730,7 @@ export function ksNormalityTest(data: number[]): { statistic: number; pValue: nu
     ? 'Fail to reject H₀: Data appears to be normally distributed (p > 0.05)' 
     : 'Reject H₀: Data does not appear to be normally distributed (p ≤ 0.05)';
   
-  return { statistic: Math.round(dMax * 10000) / 10000, pValue: Math.round(pValue * 10000) / 10000, conclusion };
+  return { statistic: Math.round(dMax * 10000) / 10000, pValue: Math.max(0, Math.min(1, Math.round(pValue * 10000) / 10000)), conclusion };
 }
 
 function ksPValue(lambda: number): number {
@@ -736,11 +739,11 @@ function ksPValue(lambda: number): number {
   
   let sum = 0;
   for (let k = 1; k <= 100; k++) {
-    const term = Math.exp(-2 * k * k * lambda * lambda);
+    const term = Math.pow(-1, k - 1) * Math.exp(-2 * k * k * lambda * lambda);
     sum += term;
-    if (term < 1e-10) break;
+    if (Math.abs(term) < 1e-10) break;
   }
-  return 2 * sum;
+  return Math.max(0, Math.min(1, 2 * sum));
 }
 
 // Anderson-Darling Normality Test

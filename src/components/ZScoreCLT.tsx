@@ -127,7 +127,7 @@ function ZScoreCalculator() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-          <Calculator className="size-5" />
+          <Calculator className="size-5 shrink-0" />
           Z-Score Calculator
         </CardTitle>
         <CardDescription>
@@ -203,7 +203,7 @@ function ZScoreCalculator() {
         {/* Validation error */}
         {sigmaValue && parseFloat(sigmaValue) <= 0 && (
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm">
-            <AlertCircle className="size-4" />
+            <AlertCircle className="size-4 shrink-0" />
             Standard deviation must be greater than 0
           </div>
         )}
@@ -215,7 +215,7 @@ function ZScoreCalculator() {
             disabled={!isValid}
             className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            <Calculator className="size-4 mr-2" />
+            <Calculator className="size-4 mr-2 shrink-0" />
             Calculate
           </Button>
           <Button
@@ -232,27 +232,27 @@ function ZScoreCalculator() {
           <div className="space-y-4">
             {/* Z-Score Result */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 p-4 text-center">
+              <div className="min-w-0 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 p-4 text-center">
                 <p className="text-xs text-teal-600 dark:text-teal-400 font-medium mb-1">
                   Z-Score
                 </p>
-                <p className="text-2xl font-bold font-mono text-teal-800 dark:text-teal-300">
+                <p className="text-2xl font-bold font-mono text-teal-800 dark:text-teal-300 truncate">
                   {z.toFixed(4)}
                 </p>
               </div>
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4 text-center">
+              <div className="min-w-0 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4 text-center">
                 <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
                   P(Z ≤ z)
                 </p>
-                <p className="text-2xl font-bold font-mono text-amber-800 dark:text-amber-300">
+                <p className="text-2xl font-bold font-mono text-amber-800 dark:text-amber-300 truncate">
                   {probability.toFixed(4)}
                 </p>
               </div>
-              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 p-4 text-center">
+              <div className="min-w-0 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 p-4 text-center">
                 <p className="text-xs text-rose-600 dark:text-rose-400 font-medium mb-1">
                   P(Z &gt; z)
                 </p>
-                <p className="text-2xl font-bold font-mono text-rose-800 dark:text-rose-300">
+                <p className="text-2xl font-bold font-mono text-rose-800 dark:text-rose-300 truncate">
                   {(1 - probability).toFixed(4)}
                 </p>
               </div>
@@ -282,7 +282,7 @@ function ZScoreCalculator() {
               <p className="text-sm font-semibold">
                 Standard Normal Distribution with Z-Score
               </p>
-              <div className="h-72 w-full">
+              <div className="h-60 sm:h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={normalData}
@@ -348,7 +348,7 @@ function ZScoreCalculator() {
               </div>
 
               {/* Shaded area plot - separate chart for the cumulative area */}
-              <div className="h-52 w-full">
+              <div className="h-44 sm:h-52 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={shadedData}
@@ -540,7 +540,7 @@ function CLTSimulation() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-          <BarChart3 className="size-5" />
+          <BarChart3 className="size-5 shrink-0" />
           Central Limit Theorem Simulation
         </CardTitle>
         <CardDescription>
@@ -622,27 +622,27 @@ function CLTSimulation() {
             {/* Population Info */}
             {selectedColumn && columnData.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 p-3 text-center">
+                <div className="min-w-0 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 p-3 text-center">
                   <p className="text-xs text-teal-600 dark:text-teal-400 font-medium">
                     Population Size
                   </p>
-                  <p className="text-lg font-bold font-mono text-teal-800 dark:text-teal-300">
+                  <p className="text-lg font-bold font-mono text-teal-800 dark:text-teal-300 truncate">
                     {columnData.length.toLocaleString()}
                   </p>
                 </div>
-                <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 text-center">
+                <div className="min-w-0 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 text-center">
                   <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                     Population Mean (μ)
                   </p>
-                  <p className="text-lg font-bold font-mono text-amber-800 dark:text-amber-300">
+                  <p className="text-lg font-bold font-mono text-amber-800 dark:text-amber-300 truncate">
                     {populationMean.toFixed(4)}
                   </p>
                 </div>
-                <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 p-3 text-center">
+                <div className="min-w-0 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 p-3 text-center">
                   <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
                     Population Std Dev (σ)
                   </p>
-                  <p className="text-lg font-bold font-mono text-rose-800 dark:text-rose-300">
+                  <p className="text-lg font-bold font-mono text-rose-800 dark:text-rose-300 truncate">
                     {populationStdDev.toFixed(4)}
                   </p>
                 </div>
@@ -662,7 +662,7 @@ function CLTSimulation() {
                 </>
               ) : (
                 <>
-                  <Play className="size-4 mr-2" />
+                  <Play className="size-4 mr-2 shrink-0" />
                   Run Simulation
                 </>
               )}
@@ -674,10 +674,11 @@ function CLTSimulation() {
                 {/* Statistics Comparison Table */}
                 <div className="space-y-2">
                   <p className="text-sm font-semibold flex items-center gap-2">
-                    <TrendingUp className="size-4 text-amber-600" />
+                    <TrendingUp className="size-4 text-amber-600 shrink-0" />
                     Sample Means Statistics vs Theoretical Values
                   </p>
                   <div className="overflow-x-auto rounded-lg border">
+                    {/* Table wrapper ensures horizontal scroll on narrow screens */}
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-muted/50">
@@ -755,7 +756,7 @@ function CLTSimulation() {
                     Distribution of Sample Means (n = {sampleSize}, resamples ={' '}
                     {numSamples})
                   </p>
-                  <div className="h-80 w-full">
+                  <div className="h-64 sm:h-80 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={chartData}

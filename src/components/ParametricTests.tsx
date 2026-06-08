@@ -55,9 +55,9 @@ function ResultBadge({ pValue }: { pValue: number }) {
       }
     >
       {significant ? (
-        <XCircle className="size-3 mr-1" />
+        <XCircle className="size-3 mr-1 shrink-0" />
       ) : (
-        <CheckCircle2 className="size-3 mr-1" />
+        <CheckCircle2 className="size-3 mr-1 shrink-0" />
       )}
       {significant ? 'Significant' : 'Not Significant'}
     </Badge>
@@ -126,7 +126,7 @@ function OneSampleTTestPanel() {
       <Card className="border-emerald-200 dark:border-emerald-900">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <TrendingUp className="size-4 text-emerald-600" />
+            <TrendingUp className="size-4 text-emerald-600 shrink-0" />
             One-Sample T-Test
           </CardTitle>
           <CardDescription>
@@ -135,7 +135,7 @@ function OneSampleTTestPanel() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Column</Label>
               <Select value={selectedCol} onValueChange={setSelectedCol}>
                 <SelectTrigger className="w-full">
@@ -150,7 +150,7 @@ function OneSampleTTestPanel() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">μ₀ (Hypothesized Mean)</Label>
               <Input
                 type="number"
@@ -163,13 +163,13 @@ function OneSampleTTestPanel() {
               onClick={handleRun}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              <Calculator className="size-4 mr-1" />
+              <Calculator className="size-4 mr-1 shrink-0" />
               Run Test
             </Button>
           </div>
           {error && (
             <div className="mt-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-              <AlertTriangle className="size-4" />
+              <AlertTriangle className="size-4 shrink-0" />
               {error}
             </div>
           )}
@@ -184,6 +184,7 @@ function OneSampleTTestPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -212,6 +213,7 @@ function OneSampleTTestPanel() {
                 </TableRow>
               </TableBody>
             </Table>
+            </div>
             <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
           </CardContent>
         </Card>
@@ -255,7 +257,7 @@ function TwoSampleTTestPanel() {
       <Card className="border-amber-200 dark:border-amber-900">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <BarChart3 className="size-4 text-amber-600" />
+            <BarChart3 className="size-4 text-amber-600 shrink-0" />
             Two-Sample T-Test (Independent)
           </CardTitle>
           <CardDescription>
@@ -264,7 +266,7 @@ function TwoSampleTTestPanel() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Column 1</Label>
               <Select value={col1} onValueChange={setCol1}>
                 <SelectTrigger className="w-full">
@@ -279,7 +281,7 @@ function TwoSampleTTestPanel() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Column 2</Label>
               <Select value={col2} onValueChange={setCol2}>
                 <SelectTrigger className="w-full">
@@ -294,7 +296,7 @@ function TwoSampleTTestPanel() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Variance Assumption</Label>
               <div className="flex gap-2">
                 <Button
@@ -319,13 +321,13 @@ function TwoSampleTTestPanel() {
               onClick={handleRun}
               className="bg-amber-600 hover:bg-amber-700 text-white"
             >
-              <Calculator className="size-4 mr-1" />
+              <Calculator className="size-4 mr-1 shrink-0" />
               Run Test
             </Button>
           </div>
           {error && (
             <div className="mt-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-              <AlertTriangle className="size-4" />
+              <AlertTriangle className="size-4 shrink-0" />
               {error}
             </div>
           )}
@@ -340,6 +342,7 @@ function TwoSampleTTestPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -374,6 +377,7 @@ function TwoSampleTTestPanel() {
                 </TableRow>
               </TableBody>
             </Table>
+            </div>
             <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
           </CardContent>
         </Card>
@@ -417,7 +421,7 @@ function PairedTTestPanel() {
       <Card className="border-teal-200 dark:border-teal-900">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Sigma className="size-4 text-teal-600" />
+            <Sigma className="size-4 text-teal-600 shrink-0" />
             Paired T-Test
           </CardTitle>
           <CardDescription>
@@ -426,7 +430,7 @@ function PairedTTestPanel() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Column 1 (Before)</Label>
               <Select value={col1} onValueChange={setCol1}>
                 <SelectTrigger className="w-full">
@@ -441,7 +445,7 @@ function PairedTTestPanel() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Column 2 (After)</Label>
               <Select value={col2} onValueChange={setCol2}>
                 <SelectTrigger className="w-full">
@@ -460,13 +464,13 @@ function PairedTTestPanel() {
               onClick={handleRun}
               className="bg-teal-600 hover:bg-teal-700 text-white"
             >
-              <Calculator className="size-4 mr-1" />
+              <Calculator className="size-4 mr-1 shrink-0" />
               Run Test
             </Button>
           </div>
           {error && (
             <div className="mt-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-              <AlertTriangle className="size-4" />
+              <AlertTriangle className="size-4 shrink-0" />
               {error}
             </div>
           )}
@@ -481,6 +485,7 @@ function PairedTTestPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -513,6 +518,7 @@ function PairedTTestPanel() {
                 </TableRow>
               </TableBody>
             </Table>
+            </div>
             <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
           </CardContent>
         </Card>
@@ -583,7 +589,7 @@ function ZTestSection() {
       <Card className="border-orange-200 dark:border-orange-900">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Sigma className="size-4 text-orange-600" />
+            <Sigma className="size-4 text-orange-600 shrink-0" />
             One-Sample Z-Test
           </CardTitle>
           <CardDescription>
@@ -592,7 +598,7 @@ function ZTestSection() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Column</Label>
               <Select value={selectedCol} onValueChange={setSelectedCol}>
                 <SelectTrigger className="w-full">
@@ -607,7 +613,7 @@ function ZTestSection() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">μ₀ (Hypothesized Mean)</Label>
               <Input
                 type="number"
@@ -616,7 +622,7 @@ function ZTestSection() {
                 placeholder="0"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Known σ (Population SD)</Label>
               <Input
                 type="number"
@@ -631,13 +637,13 @@ function ZTestSection() {
               onClick={handleRun}
               className="bg-orange-600 hover:bg-orange-700 text-white"
             >
-              <Calculator className="size-4 mr-1" />
+              <Calculator className="size-4 mr-1 shrink-0" />
               Run Test
             </Button>
           </div>
           {error && (
             <div className="mt-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-              <AlertTriangle className="size-4" />
+              <AlertTriangle className="size-4 shrink-0" />
               {error}
             </div>
           )}
@@ -652,6 +658,7 @@ function ZTestSection() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -676,6 +683,7 @@ function ZTestSection() {
                 </TableRow>
               </TableBody>
             </Table>
+            </div>
             <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
           </CardContent>
         </Card>
@@ -746,7 +754,7 @@ function ChiSquareGoFSection() {
       <Card className="border-rose-200 dark:border-rose-900">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <BarChart3 className="size-4 text-rose-600" />
+            <BarChart3 className="size-4 text-rose-600 shrink-0" />
             Chi-Square Goodness of Fit Test
           </CardTitle>
           <CardDescription>
@@ -755,7 +763,7 @@ function ChiSquareGoFSection() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Categorical Column</Label>
               <Select value={selectedCol} onValueChange={setSelectedCol}>
                 <SelectTrigger className="w-full">
@@ -774,13 +782,13 @@ function ChiSquareGoFSection() {
               onClick={handleRun}
               className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              <Calculator className="size-4 mr-1" />
+              <Calculator className="size-4 mr-1 shrink-0" />
               Run Test
             </Button>
           </div>
           {error && (
             <div className="mt-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-              <AlertTriangle className="size-4" />
+              <AlertTriangle className="size-4 shrink-0" />
               {error}
             </div>
           )}
@@ -796,6 +804,7 @@ function ChiSquareGoFSection() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -816,6 +825,7 @@ function ChiSquareGoFSection() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
 
@@ -826,6 +836,7 @@ function ChiSquareGoFSection() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -854,6 +865,7 @@ function ChiSquareGoFSection() {
                   </TableRow>
                 </TableBody>
               </Table>
+              </div>
               <ConclusionBox conclusion={result.conclusion} pValue={result.pValue} />
             </CardContent>
           </Card>
@@ -930,7 +942,7 @@ function ANOVASsection() {
       <Card className="border-violet-200 dark:border-violet-900">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <BarChart3 className="size-4 text-violet-600" />
+            <BarChart3 className="size-4 text-violet-600 shrink-0" />
             One-Way ANOVA + Levene&apos;s Test
           </CardTitle>
           <CardDescription>
@@ -939,7 +951,7 @@ function ANOVASsection() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Numeric Column</Label>
               <Select value={numCol} onValueChange={setNumCol}>
                 <SelectTrigger className="w-full">
@@ -954,7 +966,7 @@ function ANOVASsection() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-sm font-medium">Grouping Column</Label>
               <Select value={grpCol} onValueChange={setGrpCol}>
                 <SelectTrigger className="w-full">
@@ -973,13 +985,13 @@ function ANOVASsection() {
               onClick={handleRun}
               className="bg-violet-600 hover:bg-violet-700 text-white"
             >
-              <Calculator className="size-4 mr-1" />
+              <Calculator className="size-4 mr-1 shrink-0" />
               Run Tests
             </Button>
           </div>
           {error && (
             <div className="mt-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-              <AlertTriangle className="size-4" />
+              <AlertTriangle className="size-4 shrink-0" />
               {error}
             </div>
           )}
@@ -998,6 +1010,7 @@ function ANOVASsection() {
               {/* Group Means */}
               <div>
                 <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Group Means</h4>
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1016,6 +1029,7 @@ function ANOVASsection() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               </div>
 
               {/* ANOVA Table */}
@@ -1023,6 +1037,7 @@ function ANOVASsection() {
                 <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
                   ANOVA Summary Table
                 </h4>
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1065,6 +1080,7 @@ function ANOVASsection() {
                     </TableRow>
                   </TableBody>
                 </Table>
+                </div>
               </div>
             </div>
             <ConclusionBox conclusion={anovaResult.conclusion} pValue={anovaResult.pValue} />
@@ -1081,6 +1097,7 @@ function ANOVASsection() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1113,6 +1130,7 @@ function ANOVASsection() {
                 </TableRow>
               </TableBody>
             </Table>
+            </div>
             <ConclusionBox conclusion={leveneResult.conclusion} pValue={leveneResult.pValue} />
           </CardContent>
         </Card>
@@ -1127,7 +1145,7 @@ export default function ParametricTests() {
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-2">
         <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-          <FlaskConical className="size-5 text-emerald-600 dark:text-emerald-400" />
+          <FlaskConical className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
         </div>
         <div>
           <h2 className="text-xl font-bold">Parametric Hypothesis Tests</h2>
@@ -1140,19 +1158,19 @@ export default function ParametricTests() {
       <Tabs defaultValue="t-test" className="w-full">
         <TabsList className="flex-wrap">
           <TabsTrigger value="t-test" className="gap-1.5">
-            <TrendingUp className="size-3.5" />
+            <TrendingUp className="size-3.5 shrink-0" />
             T-Test
           </TabsTrigger>
           <TabsTrigger value="z-test" className="gap-1.5">
-            <Sigma className="size-3.5" />
+            <Sigma className="size-3.5 shrink-0" />
             Z-Test
           </TabsTrigger>
           <TabsTrigger value="chi-square" className="gap-1.5">
-            <BarChart3 className="size-3.5" />
+            <BarChart3 className="size-3.5 shrink-0" />
             Chi-Square GoF
           </TabsTrigger>
           <TabsTrigger value="anova" className="gap-1.5">
-            <FlaskConical className="size-3.5" />
+            <FlaskConical className="size-3.5 shrink-0" />
             ANOVA + Levene
           </TabsTrigger>
         </TabsList>

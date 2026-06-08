@@ -487,7 +487,7 @@ export default function DescriptiveStatistics() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <TrendingUp className="h-4 w-4 text-teal-600" />
+              <TrendingUp className="h-4 w-4 text-teal-600 shrink-0" />
               Summary Measures &mdash; {summary.name}
             </CardTitle>
             <CardDescription>
@@ -495,7 +495,7 @@ export default function DescriptiveStatistics() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="max-h-96">
+            <ScrollArea className="max-h-96 custom-scrollbar">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -529,7 +529,7 @@ export default function DescriptiveStatistics() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <BarChart3 className="h-4 w-4 text-teal-600" />
+                <BarChart3 className="h-4 w-4 text-teal-600 shrink-0" />
                 Histogram
               </CardTitle>
               <CardDescription>
@@ -537,7 +537,7 @@ export default function DescriptiveStatistics() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[320px] w-full">
+              <div className="h-[280px] sm:h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={histData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -599,7 +599,7 @@ export default function DescriptiveStatistics() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <BoxSelect className="h-4 w-4 text-teal-600" />
+                <BoxSelect className="h-4 w-4 text-teal-600 shrink-0" />
                 Boxplot
               </CardTitle>
               <CardDescription>
@@ -607,7 +607,7 @@ export default function DescriptiveStatistics() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[220px] w-full flex items-center justify-center">
+              <div className="h-[200px] sm:h-[220px] w-full flex items-center justify-center">
                 <BoxplotChart summary={summary} outliers={outlierInfo.outliers} />
               </div>
               <div className="flex flex-wrap gap-3 mt-4 text-xs text-muted-foreground justify-center">
@@ -640,7 +640,7 @@ export default function DescriptiveStatistics() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-4 w-4 text-amber-600" />
+              <BarChart3 className="h-4 w-4 text-amber-600 shrink-0" />
               Frequency Chart &mdash; {activeCategoricalCol}
             </CardTitle>
             <CardDescription>
@@ -648,7 +648,7 @@ export default function DescriptiveStatistics() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[360px] w-full">
+            <div className="h-[300px] sm:h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={categoricalFrequency.slice(0, 20)}

@@ -84,9 +84,9 @@ function StatsDisplay({ stats }: { stats: Record<string, number> }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {Object.entries(stats).map(([key, val]) => (
-        <div key={key} className="rounded-lg border bg-muted/30 dark:bg-slate-800/50 dark:border-slate-700 p-2 text-center">
+        <div key={key} className="min-w-0 rounded-lg border bg-muted/30 dark:bg-slate-800/50 dark:border-slate-700 p-2 text-center">
           <div className="text-xs text-muted-foreground capitalize">{key}</div>
-          <div className="text-sm font-semibold font-mono">
+          <div className="truncate text-sm font-semibold font-mono">
             {typeof val === 'number' ? (Number.isInteger(val) ? val : val.toFixed(4)) : val}
           </div>
         </div>
@@ -117,7 +117,7 @@ function BinomialDistribution() {
             <CardDescription>Probability Mass Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -137,7 +137,7 @@ function BinomialDistribution() {
             <CardDescription>Cumulative Distribution Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -182,7 +182,7 @@ function BernoulliDistribution() {
             <CardDescription>Probability Mass Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -202,7 +202,7 @@ function BernoulliDistribution() {
             <CardDescription>Cumulative Distribution Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -247,7 +247,7 @@ function PoissonDistribution() {
             <CardDescription>Probability Mass Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -267,7 +267,7 @@ function PoissonDistribution() {
             <CardDescription>Cumulative Distribution Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -323,7 +323,7 @@ function NormalDistribution() {
             <CardDescription>Probability Density Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -344,7 +344,7 @@ function NormalDistribution() {
             <CardDescription>Cumulative Distribution Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -391,7 +391,7 @@ function ExponentialDistribution() {
             <CardDescription>Probability Density Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -411,7 +411,7 @@ function ExponentialDistribution() {
             <CardDescription>Cumulative Distribution Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -462,7 +462,7 @@ function UniformDistribution() {
             <CardDescription>Probability Density Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -482,7 +482,7 @@ function UniformDistribution() {
             <CardDescription>Cumulative Distribution Function</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -567,7 +567,7 @@ function EmpiricalRuleSection() {
           <CardDescription>Areas under the Normal curve at 1σ, 2σ, and 3σ from the mean</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-80">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={sigmaBandData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -705,7 +705,7 @@ function DistConfigPanel({
   };
 
   return (
-    <Card className="dark:border-slate-700">
+    <Card className="min-w-0 dark:border-slate-700">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">{label}</CardTitle>
       </CardHeader>
@@ -820,8 +820,12 @@ function DistributionComparison() {
 
   const configPanelRow = (
     <div className="grid gap-4 lg:grid-cols-2">
-      <DistConfigPanel config={config1} onChange={setConfig1} label="Distribution A" />
-      <DistConfigPanel config={config2} onChange={setConfig2} label="Distribution B" />
+      <div className="min-w-0">
+        <DistConfigPanel config={config1} onChange={setConfig1} label="Distribution A" />
+      </div>
+      <div className="min-w-0">
+        <DistConfigPanel config={config2} onChange={setConfig2} label="Distribution B" />
+      </div>
     </div>
   );
 
@@ -855,7 +859,7 @@ function DistributionComparison() {
             <CardTitle className="text-base">Side-by-Side Comparison — PMF</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-64 sm:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={mergedDiscreteData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -884,7 +888,7 @@ function DistributionComparison() {
           <CardDescription>Both distributions plotted on the same axes for comparison</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-80">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={mergedContinuousData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -923,7 +927,7 @@ export default function ProbabilityDistributions() {
       {/* Section Header */}
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400">
-          <BarChart3 className="h-5 w-5" />
+          <BarChart3 className="h-5 w-5 shrink-0" />
         </div>
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Section 3: Probability Distributions</h2>
@@ -937,7 +941,7 @@ export default function ProbabilityDistributions() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Dice3 className="h-5 w-5 text-teal-600" />
+            <Dice3 className="h-5 w-5 shrink-0 text-teal-600" />
             <CardTitle>Discrete Distributions</CardTitle>
           </div>
           <CardDescription>
@@ -968,7 +972,7 @@ export default function ProbabilityDistributions() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <TrendingUp className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <CardTitle>Continuous Distributions</CardTitle>
           </div>
           <CardDescription>
@@ -999,7 +1003,7 @@ export default function ProbabilityDistributions() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Info className="h-5 w-5 text-amber-600" />
+            <Info className="h-5 w-5 shrink-0 text-amber-600" />
             <CardTitle>Empirical Rule for Normal Distribution</CardTitle>
           </div>
           <CardDescription>
@@ -1015,7 +1019,7 @@ export default function ProbabilityDistributions() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <GitCompare className="h-5 w-5 text-rose-600" />
+            <GitCompare className="h-5 w-5 shrink-0 text-rose-600" />
             <CardTitle>Distribution Comparison</CardTitle>
           </div>
           <CardDescription>

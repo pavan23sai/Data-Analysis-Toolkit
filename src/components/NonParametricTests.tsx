@@ -315,7 +315,7 @@ export default function NonParametricTests() {
     {
       id: 'mann-whitney',
       title: 'Mann-Whitney U Test',
-      icon: <GitCompareArrows className="size-5" />,
+      icon: <GitCompareArrows className="size-5 shrink-0" />,
       description: 'Compare 2 independent groups',
       note: '2 independent groups, non-normal data',
       color: 'text-teal-600 dark:text-teal-400',
@@ -323,7 +323,7 @@ export default function NonParametricTests() {
     {
       id: 'wilcoxon',
       title: 'Wilcoxon Signed-Rank',
-      icon: <ArrowLeftRight className="size-5" />,
+      icon: <ArrowLeftRight className="size-5 shrink-0" />,
       description: 'Compare paired observations',
       note: 'Paired groups, before & after, non-normal data',
       color: 'text-amber-600 dark:text-amber-400',
@@ -331,7 +331,7 @@ export default function NonParametricTests() {
     {
       id: 'kruskal-wallis',
       title: 'Kruskal-Wallis Test',
-      icon: <BarChart3 className="size-5" />,
+      icon: <BarChart3 className="size-5 shrink-0" />,
       description: 'Compare 3+ independent groups',
       note: '3+ groups, like ANOVA but non-parametric',
       color: 'text-emerald-600 dark:text-emerald-400',
@@ -339,7 +339,7 @@ export default function NonParametricTests() {
     {
       id: 'friedman',
       title: 'Friedman Test',
-      icon: <Repeat className="size-5" />,
+      icon: <Repeat className="size-5 shrink-0" />,
       description: 'Compare 3+ related groups',
       note: 'Repeated measures, 3+ related groups, non-normal data',
       color: 'text-orange-600 dark:text-orange-400',
@@ -483,7 +483,7 @@ export default function NonParametricTests() {
             </div>
             {wilCol1 && wilCol2 && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Info className="size-3.5" />
+                <Info className="size-3.5 shrink-0" />
                 <span>
                   Observations: {getColumnData(wilCol1).length} vs {getColumnData(wilCol2).length}
                   {getColumnData(wilCol1).length !== getColumnData(wilCol2).length && (
@@ -540,7 +540,7 @@ export default function NonParametricTests() {
                     ))}
                     {getUniqueGroups(kwGroupCol).length < 3 && (
                       <span className="text-xs text-destructive flex items-center gap-1">
-                        <AlertTriangle className="size-3" />
+                        <AlertTriangle className="size-3 shrink-0" />
                         Need at least 3 groups
                       </span>
                     )}
@@ -573,7 +573,7 @@ export default function NonParametricTests() {
                           : ''
                       }
                     >
-                      {isSelected && <CheckCircle2 className="size-3.5 mr-1" />}
+                      {isSelected && <CheckCircle2 className="size-3.5 mr-1 shrink-0" />}
                       {col}
                     </Button>
                   )
@@ -581,7 +581,7 @@ export default function NonParametricTests() {
               </div>
               {friedmanCols.length > 0 && friedmanCols.length < 3 && (
                 <p className="text-xs text-destructive flex items-center gap-1">
-                  <AlertTriangle className="size-3" />
+                  <AlertTriangle className="size-3 shrink-0" />
                   Select at least 3 columns for the Friedman Test
                 </p>
               )}
@@ -593,7 +593,7 @@ export default function NonParametricTests() {
             </div>
             {friedmanCols.length >= 2 && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Info className="size-3.5" />
+                <Info className="size-3.5 shrink-0" />
                 <span>
                   All columns must have equal observations:{' '}
                   {friedmanCols.map((c) => getColumnData(c).length).join(', ')}
@@ -610,7 +610,7 @@ export default function NonParametricTests() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="size-5 text-teal-600" />
+            <BarChart3 className="size-5 text-teal-600 shrink-0" />
             Non-parametric Tests
           </CardTitle>
           <CardDescription>
@@ -619,7 +619,7 @@ export default function NonParametricTests() {
         </CardHeader>
         <CardContent>
           <Alert>
-            <Info className="size-4" />
+            <Info className="size-4 shrink-0" />
             <AlertTitle>No Dataset Loaded</AlertTitle>
             <AlertDescription>
               Please upload a dataset first to perform non-parametric tests.
@@ -636,7 +636,7 @@ export default function NonParametricTests() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="size-5 text-teal-600 dark:text-teal-400" />
+            <BarChart3 className="size-5 text-teal-600 dark:text-teal-400 shrink-0" />
             Section 7 — Non-parametric Tests
           </CardTitle>
           <CardDescription>
@@ -647,7 +647,7 @@ export default function NonParametricTests() {
       </Card>
 
       {/* Test Selection Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {testCards.map((test) => {
           const isActive = activeTest === test.id
           return (
@@ -703,7 +703,7 @@ export default function NonParametricTests() {
 
           {error && (
             <Alert variant="destructive">
-              <AlertTriangle className="size-4" />
+              <AlertTriangle className="size-4 shrink-0" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
@@ -714,7 +714,7 @@ export default function NonParametricTests() {
               onClick={runTest}
               className="bg-teal-600 hover:bg-teal-700 text-white"
             >
-              <Play className="size-4" />
+              <Play className="size-4 shrink-0" />
               Run Test
             </Button>
           </div>
@@ -726,11 +726,12 @@ export default function NonParametricTests() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="size-4 text-teal-600 dark:text-teal-400" />
+              <BarChart3 className="size-4 text-teal-600 dark:text-teal-400 shrink-0" />
               Test Results
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -744,7 +745,7 @@ export default function NonParametricTests() {
               <TableBody>
                 {results.map((result, idx) => (
                   <TableRow key={idx}>
-                    <TableCell className="font-medium">{result.testName}</TableCell>
+                    <TableCell className="font-medium truncate max-w-[200px]">{result.testName}</TableCell>
                     <TableCell className="text-center">
                       <span className="font-mono text-sm">
                         {result.statisticLabel} = {result.statistic}
@@ -779,6 +780,7 @@ export default function NonParametricTests() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -787,15 +789,15 @@ export default function NonParametricTests() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Info className="size-4 text-amber-600 dark:text-amber-400" />
+            <Info className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
             When to Use Non-parametric Tests
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-lg border p-4 space-y-2">
+            <div className="rounded-lg border p-4 space-y-2 min-w-0">
               <div className="flex items-center gap-2">
-                <GitCompareArrows className="size-4 text-teal-600" />
+                <GitCompareArrows className="size-4 text-teal-600 shrink-0" />
                 <span className="font-medium text-sm">Mann-Whitney U</span>
               </div>
               <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
@@ -805,9 +807,9 @@ export default function NonParametricTests() {
                 <li>Non-parametric alternative to independent t-test</li>
               </ul>
             </div>
-            <div className="rounded-lg border p-4 space-y-2">
+            <div className="rounded-lg border p-4 space-y-2 min-w-0">
               <div className="flex items-center gap-2">
-                <ArrowLeftRight className="size-4 text-amber-600" />
+                <ArrowLeftRight className="size-4 text-amber-600 shrink-0" />
                 <span className="font-medium text-sm">Wilcoxon Signed-Rank</span>
               </div>
               <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
@@ -817,9 +819,9 @@ export default function NonParametricTests() {
                 <li>Non-parametric alternative to paired t-test</li>
               </ul>
             </div>
-            <div className="rounded-lg border p-4 space-y-2">
+            <div className="rounded-lg border p-4 space-y-2 min-w-0">
               <div className="flex items-center gap-2">
-                <BarChart3 className="size-4 text-emerald-600" />
+                <BarChart3 className="size-4 text-emerald-600 shrink-0" />
                 <span className="font-medium text-sm">Kruskal-Wallis</span>
               </div>
               <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
@@ -829,9 +831,9 @@ export default function NonParametricTests() {
                 <li>Tests if at least one group differs</li>
               </ul>
             </div>
-            <div className="rounded-lg border p-4 space-y-2">
+            <div className="rounded-lg border p-4 space-y-2 min-w-0">
               <div className="flex items-center gap-2">
-                <Repeat className="size-4 text-orange-600" />
+                <Repeat className="size-4 text-orange-600 shrink-0" />
                 <span className="font-medium text-sm">Friedman</span>
               </div>
               <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">

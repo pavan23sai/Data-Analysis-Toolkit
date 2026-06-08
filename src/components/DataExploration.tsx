@@ -325,24 +325,24 @@ export default function DataExploration() {
         </CardHeader>
         <CardContent>
           {duplicateResult && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">
-                  {dataset.rows.length}
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3 sm:p-4 text-center min-w-0">
+                <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
+                  {dataset.rows.length.toLocaleString()}
                 </p>
-                <p className="text-sm text-muted-foreground">Total Rows</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Total Rows</p>
               </div>
-              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-4 text-center">
-                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                  {duplicateResult.duplicateCount}
+              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3 sm:p-4 text-center min-w-0">
+                <p className="text-lg sm:text-2xl font-bold text-amber-600 dark:text-amber-400 truncate">
+                  {duplicateResult.duplicateCount.toLocaleString()}
                 </p>
-                <p className="text-sm text-muted-foreground">Duplicate Rows</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Duplicates</p>
               </div>
-              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {duplicateResult.uniqueCount}
+              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3 sm:p-4 text-center min-w-0">
+                <p className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 truncate">
+                  {duplicateResult.uniqueCount.toLocaleString()}
                 </p>
-                <p className="text-sm text-muted-foreground">Unique Rows</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Unique Rows</p>
               </div>
             </div>
           )}
@@ -365,18 +365,18 @@ export default function DataExploration() {
             {/* Missing Value Handling */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <AlertTriangle className="size-4 text-amber-500" />
+                <AlertTriangle className="size-4 text-amber-500 shrink-0" />
                 Handle Missing Values
               </h4>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleDropMissingRows}
                   disabled={totalMissing === 0}
-                  className="border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-800"
+                  className="border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-800 w-full justify-start"
                 >
-                  <Trash2 className="size-3.5 mr-1" />
+                  <Trash2 className="size-3.5 mr-1.5 shrink-0" />
                   Drop Rows with Missing
                 </Button>
                 <Button
@@ -384,7 +384,7 @@ export default function DataExploration() {
                   size="sm"
                   onClick={() => handleFillMissing('mean')}
                   disabled={totalMissing === 0}
-                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800"
+                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
                 >
                   Fill with Mean
                 </Button>
@@ -393,7 +393,7 @@ export default function DataExploration() {
                   size="sm"
                   onClick={() => handleFillMissing('median')}
                   disabled={totalMissing === 0}
-                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800"
+                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
                 >
                   Fill with Median
                 </Button>
@@ -402,7 +402,7 @@ export default function DataExploration() {
                   size="sm"
                   onClick={() => handleFillMissing('mode')}
                   disabled={totalMissing === 0}
-                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800"
+                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800 w-full justify-start"
                 >
                   Fill with Mode
                 </Button>
@@ -414,7 +414,7 @@ export default function DataExploration() {
             {/* Duplicate Handling */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Copy className="size-4 text-amber-500" />
+                <Copy className="size-4 text-amber-500 shrink-0" />
                 Handle Duplicates
               </h4>
               <Button
@@ -424,7 +424,7 @@ export default function DataExploration() {
                 disabled={!duplicateResult || duplicateResult.duplicateCount === 0}
                 className="border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-800"
               >
-                <Trash2 className="size-3.5 mr-1" />
+                <Trash2 className="size-3.5 mr-1.5 shrink-0" />
                 Remove Duplicate Rows
               </Button>
             </div>
@@ -478,63 +478,63 @@ export default function DataExploration() {
             {outlierResult && (
               <>
                 {/* IQR Summary */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Lower Bound</p>
-                    <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-2.5 sm:p-3 min-w-0">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Lower Bound</p>
+                    <p className="text-sm sm:text-lg font-bold text-amber-600 dark:text-amber-400 truncate">
                       {outlierResult.lowerBound.toFixed(2)}
                     </p>
                   </div>
-                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Upper Bound</p>
-                    <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-2.5 sm:p-3 min-w-0">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Upper Bound</p>
+                    <p className="text-sm sm:text-lg font-bold text-amber-600 dark:text-amber-400 truncate">
                       {outlierResult.upperBound.toFixed(2)}
                     </p>
                   </div>
-                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3">
-                    <p className="text-xs text-muted-foreground mb-1">IQR</p>
-                    <p className="text-lg font-bold text-foreground">
+                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-2.5 sm:p-3 min-w-0">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">IQR</p>
+                    <p className="text-sm sm:text-lg font-bold text-foreground truncate">
                       {(outlierResult.q3 - outlierResult.q1).toFixed(2)}
                     </p>
                   </div>
-                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Outliers Found</p>
-                    <p className={`text-lg font-bold ${outlierResult.outliers.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-2.5 sm:p-3 min-w-0">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Outliers Found</p>
+                    <p className={`text-sm sm:text-lg font-bold truncate ${outlierResult.outliers.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                       {outlierResult.outliers.length}
                     </p>
                   </div>
                 </div>
 
                 {/* Five-Number Summary */}
-                <div className="rounded-lg border dark:border-slate-700 p-4">
+                <div className="rounded-lg border dark:border-slate-700 p-3 sm:p-4">
                   <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
-                    <TableProperties className="size-4" />
+                    <TableProperties className="size-4 shrink-0" />
                     Five-Number Summary
                   </h4>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="text-center">
-                      <p className="font-bold text-foreground">{outlierResult.min.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">Min</p>
+                  <div className="flex items-center justify-between text-sm gap-1 sm:gap-2 overflow-x-auto">
+                    <div className="text-center min-w-[3rem]">
+                      <p className="font-bold text-foreground text-xs sm:text-sm">{outlierResult.min.toFixed(2)}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Min</p>
                     </div>
-                    <ArrowUp className="size-3 text-muted-foreground rotate-90" />
-                    <div className="text-center">
-                      <p className="font-bold text-foreground">{outlierResult.q1.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">Q1</p>
+                    <ArrowUp className="size-3 text-muted-foreground rotate-90 shrink-0" />
+                    <div className="text-center min-w-[3rem]">
+                      <p className="font-bold text-foreground text-xs sm:text-sm">{outlierResult.q1.toFixed(2)}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Q1</p>
                     </div>
-                    <ArrowUp className="size-3 text-muted-foreground rotate-90" />
-                    <div className="text-center">
-                      <p className="font-bold text-emerald-600 dark:text-emerald-400">{outlierResult.q2.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">Median</p>
+                    <ArrowUp className="size-3 text-muted-foreground rotate-90 shrink-0" />
+                    <div className="text-center min-w-[3rem]">
+                      <p className="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">{outlierResult.q2.toFixed(2)}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Median</p>
                     </div>
-                    <ArrowUp className="size-3 text-muted-foreground rotate-90" />
-                    <div className="text-center">
-                      <p className="font-bold text-foreground">{outlierResult.q3.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">Q3</p>
+                    <ArrowUp className="size-3 text-muted-foreground rotate-90 shrink-0" />
+                    <div className="text-center min-w-[3rem]">
+                      <p className="font-bold text-foreground text-xs sm:text-sm">{outlierResult.q3.toFixed(2)}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Q3</p>
                     </div>
-                    <ArrowUp className="size-3 text-muted-foreground rotate-90" />
-                    <div className="text-center">
-                      <p className="font-bold text-foreground">{outlierResult.max.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">Max</p>
+                    <ArrowUp className="size-3 text-muted-foreground rotate-90 shrink-0" />
+                    <div className="text-center min-w-[3rem]">
+                      <p className="font-bold text-foreground text-xs sm:text-sm">{outlierResult.max.toFixed(2)}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Max</p>
                     </div>
                   </div>
                 </div>

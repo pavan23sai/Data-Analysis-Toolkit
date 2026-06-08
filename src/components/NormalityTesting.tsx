@@ -206,7 +206,7 @@ export default function NormalityTesting() {
     return (
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <FlaskConical className="h-12 w-12 text-muted-foreground/40 mb-4" />
+          <FlaskConical className="h-12 w-12 text-muted-foreground/40 mb-4 shrink-0" />
           <p className="text-muted-foreground text-lg font-medium">No Dataset Loaded</p>
           <p className="text-muted-foreground/70 text-sm mt-1">
             Upload a dataset to perform normality testing
@@ -222,7 +222,7 @@ export default function NormalityTesting() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Columns3 className="h-5 w-5 text-teal-600" />
+            <Columns3 className="h-5 w-5 text-teal-600 shrink-0" />
             Column Selection
           </CardTitle>
           <CardDescription>
@@ -258,7 +258,7 @@ export default function NormalityTesting() {
       {!selectedColumn && (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <BarChart3 className="h-12 w-12 text-muted-foreground/40 mb-4" />
+            <BarChart3 className="h-12 w-12 text-muted-foreground/40 mb-4 shrink-0" />
             <p className="text-muted-foreground text-lg font-medium">Select a Column</p>
             <p className="text-muted-foreground/70 text-sm mt-1">
               Choose a numeric column above to begin normality analysis
@@ -285,7 +285,7 @@ export default function NormalityTesting() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <FlaskConical className="h-5 w-5 text-teal-600" />
+                <FlaskConical className="h-5 w-5 text-teal-600 shrink-0" />
                 Normality Test Results
               </CardTitle>
               <CardDescription>
@@ -335,13 +335,13 @@ export default function NormalityTesting() {
           </Card>
 
           {/* Individual Test Details */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {/* Shapiro-Wilk Detail */}
             {shapiroWilkResult && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-teal-600" />
+                    <CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" />
                     Shapiro-Wilk Test
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -349,16 +349,16 @@ export default function NormalityTesting() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">W Statistic</p>
-                      <p className="text-lg font-semibold font-mono">
+                      <p className="text-lg font-semibold font-mono truncate">
                         {isNaN(shapiroWilkResult.statistic) ? 'N/A' : shapiroWilkResult.statistic.toFixed(4)}
                       </p>
                     </div>
-                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
-                      <p className="text-lg font-semibold font-mono">
+                      <p className="text-lg font-semibold font-mono truncate">
                         {isNaN(shapiroWilkResult.pValue) ? 'N/A' : shapiroWilkResult.pValue.toFixed(4)}
                       </p>
                     </div>
@@ -375,7 +375,7 @@ export default function NormalityTesting() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-teal-600" />
+                    <TrendingUp className="h-4 w-4 text-teal-600 shrink-0" />
                     Kolmogorov-Smirnov Test
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -383,16 +383,16 @@ export default function NormalityTesting() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">D Statistic</p>
-                      <p className="text-lg font-semibold font-mono">
+                      <p className="text-lg font-semibold font-mono truncate">
                         {isNaN(ksResult.statistic) ? 'N/A' : ksResult.statistic.toFixed(4)}
                       </p>
                     </div>
-                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
-                      <p className="text-lg font-semibold font-mono">
+                      <p className="text-lg font-semibold font-mono truncate">
                         {isNaN(ksResult.pValue) ? 'N/A' : ksResult.pValue.toFixed(4)}
                       </p>
                     </div>
@@ -409,7 +409,7 @@ export default function NormalityTesting() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-teal-600" />
+                    <BarChart3 className="h-4 w-4 text-teal-600 shrink-0" />
                     Anderson-Darling Test
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -417,23 +417,23 @@ export default function NormalityTesting() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">A² Statistic</p>
-                      <p className="text-lg font-semibold font-mono">
+                      <p className="text-lg font-semibold font-mono truncate">
                         {isNaN(adResult.statistic) ? 'N/A' : adResult.statistic.toFixed(4)}
                       </p>
                     </div>
-                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
-                      <p className="text-lg font-semibold font-mono">
+                      <p className="text-lg font-semibold font-mono truncate">
                         {isNaN(adResult.pValue) ? 'N/A' : adResult.pValue.toFixed(4)}
                       </p>
                     </div>
                   </div>
                   {/* Critical Values Table */}
                   {adResult.criticalValues && adResult.criticalValues.length > 0 && (
-                    <div>
+                    <div className="overflow-x-auto">
                       <p className="text-xs font-medium text-muted-foreground mb-2">Critical Values</p>
                       <Table>
                         <TableHeader>
@@ -486,7 +486,7 @@ export default function NormalityTesting() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-teal-600" />
+                  <BarChart3 className="h-4 w-4 text-teal-600 shrink-0" />
                   Histogram with Normal Curve Overlay
                 </CardTitle>
                 <CardDescription>
@@ -494,7 +494,7 @@ export default function NormalityTesting() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={testResultsChartConfig} className="h-[350px] w-full">
+                <ChartContainer config={testResultsChartConfig} className="h-[280px] sm:h-[350px] w-full">
                   <ComposedChart data={histogramWithCurveData} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                     <XAxis
@@ -525,7 +525,7 @@ export default function NormalityTesting() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-teal-600" />
+                  <TrendingUp className="h-4 w-4 text-teal-600 shrink-0" />
                   Q-Q Plot
                 </CardTitle>
                 <CardDescription>
@@ -533,7 +533,7 @@ export default function NormalityTesting() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={testResultsChartConfig} className="h-[350px] w-full">
+                <ChartContainer config={testResultsChartConfig} className="h-[280px] sm:h-[350px] w-full">
                   <ScatterChart margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                     <XAxis
@@ -575,7 +575,7 @@ export default function NormalityTesting() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-teal-600" />
+                  <TrendingUp className="h-4 w-4 text-teal-600 shrink-0" />
                   Fitted Normal Distribution Curve
                 </CardTitle>
                 <CardDescription>
@@ -590,7 +590,7 @@ export default function NormalityTesting() {
                       color: '#14b8a6',
                     },
                   }}
-                  className="h-[350px] w-full"
+                  className="h-[280px] sm:h-[350px] w-full"
                 >
                   <AreaChart data={fittedCurve} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -622,7 +622,7 @@ export default function NormalityTesting() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-teal-600" />
+                  <BarChart3 className="h-4 w-4 text-teal-600 shrink-0" />
                   Density Histogram with Normal Overlay
                 </CardTitle>
                 <CardDescription>
@@ -641,7 +641,7 @@ export default function NormalityTesting() {
                       color: '#f97316',
                     },
                   }}
-                  className="h-[350px] w-full"
+                  className="h-[280px] sm:h-[350px] w-full"
                 >
                   {(() => {
                     const n = columnData.length

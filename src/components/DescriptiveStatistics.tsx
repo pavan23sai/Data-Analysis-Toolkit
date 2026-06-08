@@ -45,6 +45,8 @@ import {
   TrendingUp,
   AlertTriangle,
   GitCompare,
+  Activity,
+  ShieldCheck,
 } from 'lucide-react';
 import { useDataset } from '@/hooks/useDataset';
 import {
@@ -79,12 +81,148 @@ const BAR_COLORS = [
   '#f43f5e',
 ];
 
+// Category config for stat cards
+const STAT_CATEGORIES = {
+  centralTendency: {
+    label: 'Central Tendency',
+    gradient: 'from-teal-50/80 to-teal-100/40 dark:from-teal-900/20 dark:to-teal-800/10',
+    border: 'border-l-teal-500',
+    iconBg: 'bg-teal-100 dark:bg-teal-900/30',
+    iconColor: 'text-teal-600 dark:text-teal-400',
+  },
+  dispersion: {
+    label: 'Dispersion',
+    gradient: 'from-amber-50/80 to-amber-100/40 dark:from-amber-900/20 dark:to-amber-800/10',
+    border: 'border-l-amber-500',
+    iconBg: 'bg-amber-100 dark:bg-amber-900/30',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+  },
+  position: {
+    label: 'Position',
+    gradient: 'from-cyan-50/80 to-cyan-100/40 dark:from-cyan-900/20 dark:to-cyan-800/10',
+    border: 'border-l-cyan-500',
+    iconBg: 'bg-cyan-100 dark:bg-cyan-900/30',
+    iconColor: 'text-cyan-600 dark:text-cyan-400',
+  },
+  shape: {
+    label: 'Shape',
+    gradient: 'from-rose-50/80 to-rose-100/40 dark:from-rose-900/20 dark:to-rose-800/10',
+    border: 'border-l-rose-500',
+    iconBg: 'bg-rose-100 dark:bg-rose-900/30',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+  },
+} as const;
+
+type CategoryKey = keyof typeof STAT_CATEGORIES;
+
 function formatNumber(val: number, decimals = 4): string {
   if (Number.isNaN(val) || !Number.isFinite(val)) return 'N/A';
   return val.toLocaleString(undefined, {
     minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
   });
+}
+
+// Distribution shape classifier
+type DistributionShape = 'Normal' | 'Right-Skewed' | 'Left-Skewed' | 'Uniform';
+
+function classifyDistribution(skewness: number, kurtosis: number): DistributionShape {
+  // Uniform: very low kurtosis (platykurtic, kurtosis << 3 for excess kurtosis << 0)
+  // Our kurtosis is excess kurtosis (centered on 0 for normal)
+  if (Math.abs(kurtosis) < 0.5 && Math.abs(skewness) < 0.3) {
+    // Check for very flat distribution (low excess kurtosis)
+    if (kurtosis < -1) return 'Uniform';
+  }
+  if (kurtosis < -1.2 && Math.abs(skewness) < 0.5) return 'Uniform';
+  if (Math.abs(skewness) < 0.5) return 'Normal';
+  if (skewness >= 0.5) return 'Right-Skewed';
+  if (skewness <= -0.5) return 'Left-Skewed';
+  return 'Normal';
+}
+
+const SHAPE_CONFIG: Record<DistributionShape, { color: string; bgClass: string; textClass: string; badgeClass: string; svgColor: string }> = {
+  Normal: {
+    color: '#10b981',
+    bgClass: 'bg-emerald-50 dark:bg-emerald-900/10',
+    textClass: 'text-emerald-700 dark:text-emerald-400',
+    badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+    svgColor: '#10b981',
+  },
+  'Right-Skewed': {
+    color: '#f59e0b',
+    bgClass: 'bg-amber-50 dark:bg-amber-900/10',
+    textClass: 'text-amber-700 dark:text-amber-400',
+    badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    svgColor: '#f59e0b',
+  },
+  'Left-Skewed': {
+    color: '#f43f5e',
+    bgClass: 'bg-rose-50 dark:bg-rose-900/10',
+    textClass: 'text-rose-700 dark:text-rose-400',
+    badgeClass: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
+    svgColor: '#f43f5e',
+  },
+  Uniform: {
+    color: '#64748b',
+    bgClass: 'bg-slate-50 dark:bg-slate-800/30',
+    textClass: 'text-slate-700 dark:text-slate-300',
+    badgeClass: 'bg-slate-100 text-slate-800 dark:bg-slate-700/30 dark:text-slate-300',
+    svgColor: '#64748b',
+  },
+};
+
+// Mini SVG bell curve component
+function DistributionCurveSVG({ shape, color }: { shape: DistributionShape; color: string }) {
+  const w = 200;
+  const h = 80;
+  const padX = 10;
+  const padY = 10;
+  const plotW = w - 2 * padX;
+  const plotH = h - 2 * padY;
+
+  // Generate curve points based on shape
+  const points: string[] = [];
+  const steps = 60;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps; // 0 to 1
+    const x = padX + t * plotW;
+
+    let y: number;
+    if (shape === 'Normal') {
+      // Symmetric bell curve
+      const z = (t - 0.5) * 6; // -3 to 3
+      y = Math.exp(-0.5 * z * z);
+    } else if (shape === 'Right-Skewed') {
+      // Log-normal-like shape: peak shifted left, long right tail
+      const z = (t - 0.25) * 4;
+      y = t < 0.05 ? 0.01 : Math.exp(-0.5 * z * z) * (1 + 0.3 * Math.max(0, t - 0.5));
+    } else if (shape === 'Left-Skewed') {
+      // Reverse of right-skewed
+      const z = (t - 0.75) * 4;
+      y = t > 0.95 ? 0.01 : Math.exp(-0.5 * z * z) * (1 + 0.3 * Math.max(0, 0.5 - t));
+    } else {
+      // Uniform: relatively flat
+      y = 0.6 + 0.1 * Math.sin(t * Math.PI * 4);
+    }
+
+    const py = padY + plotH - y * plotH * 0.9;
+    points.push(`${x.toFixed(1)},${py.toFixed(1)}`);
+  }
+
+  // Build path: move to first point, then line through all, then close at bottom
+  const linePath = `M ${points[0]} ${points.slice(1).map((p) => `L ${p}`).join(' ')}`;
+  // Fill path: same line path + close along bottom
+  const fillPath = `${linePath} L ${(padX + plotW).toFixed(1)},${(padY + plotH).toFixed(1)} L ${padX.toFixed(1)},${(padY + plotH).toFixed(1)} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-[200px]" role="img" aria-label={`${shape} distribution curve`}>
+      <path d={fillPath} fill={color} fillOpacity={0.15} />
+      <path d={linePath} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+      {/* Baseline */}
+      <line x1={padX} y1={padY + plotH} x2={padX + plotW} y2={padY + plotH} stroke={color} strokeWidth={1} strokeOpacity={0.3} />
+    </svg>
+  );
 }
 
 // Custom SVG Boxplot component
@@ -436,6 +574,47 @@ export default function DescriptiveStatistics() {
     });
   }, [numericColumns, dataset, getColumnData]);
 
+  // All-column summary data for the overview table
+  const allColumnSummaries = useMemo(() => {
+    if (numericColumns.length === 0 || !dataset) return [];
+    return numericColumns.map((col) => {
+      const data = getColumnData(col);
+      if (data.length === 0) {
+        return { name: col, count: 0, mean: NaN, stdDev: NaN, min: NaN, median: NaN, max: NaN, skewness: NaN };
+      }
+      const s = computeColumnSummary(col, data);
+      return {
+        name: s.name,
+        count: s.count,
+        mean: s.mean,
+        stdDev: s.stdDev,
+        min: s.min,
+        median: s.median,
+        max: s.max,
+        skewness: s.skewness,
+      };
+    });
+  }, [numericColumns, dataset, getColumnData]);
+
+  // Distribution shape classification for selected column
+  const distributionShape = useMemo(() => {
+    if (!summary) return null;
+    return classifyDistribution(summary.skewness, summary.kurtosis);
+  }, [summary]);
+
+  // Compute global CI range for visual bars
+  const ciGlobalRange = useMemo(() => {
+    if (confidenceIntervals.length === 0) return { min: 0, max: 1 };
+    const allVals = confidenceIntervals.flatMap((ci) =>
+      Number.isFinite(ci.lower) && Number.isFinite(ci.upper) ? [ci.lower, ci.upper] : []
+    );
+    if (allVals.length === 0) return { min: 0, max: 1 };
+    const ciMin = Math.min(...allVals);
+    const ciMax = Math.max(...allVals);
+    const pad = (ciMax - ciMin) * 0.1 || 1;
+    return { min: ciMin - pad, max: ciMax + pad };
+  }, [confidenceIntervals]);
+
   if (!dataset) {
     return (
       <Card className="border-dashed">
@@ -476,22 +655,43 @@ export default function DescriptiveStatistics() {
     );
   }
 
-  const summaryRows = summary
+  // Grouped summary rows with categories
+  const summaryGroups: { category: CategoryKey; items: { label: string; value: string; icon: React.ReactNode }[] }[] = summary
     ? [
-        { label: 'Count', value: formatNumber(summary.count, 0), icon: <Hash className="h-4 w-4 text-teal-600" /> },
-        { label: 'Mean', value: formatNumber(summary.mean), icon: <TrendingUp className="h-4 w-4 text-emerald-600" /> },
-        { label: 'Median', value: formatNumber(summary.median), icon: <TrendingUp className="h-4 w-4 text-cyan-600" /> },
-        { label: 'Mode', value: summary.mode.length > 0 ? summary.mode.map((m) => formatNumber(m)).join(', ') : 'None', icon: <BarChart3 className="h-4 w-4 text-amber-600" /> },
-        { label: 'Std Dev', value: formatNumber(summary.stdDev), icon: <TrendingUp className="h-4 w-4 text-orange-600" /> },
-        { label: 'Variance', value: formatNumber(summary.variance), icon: <TrendingUp className="h-4 w-4 text-rose-600" /> },
-        { label: 'Min', value: formatNumber(summary.min), icon: <TrendingUp className="h-4 w-4 text-lime-600" /> },
-        { label: 'Max', value: formatNumber(summary.max), icon: <TrendingUp className="h-4 w-4 text-pink-600" /> },
-        { label: 'Range', value: formatNumber(summary.range), icon: <TrendingUp className="h-4 w-4 text-teal-600" /> },
-        { label: 'Q1 (25th)', value: formatNumber(summary.q1), icon: <BoxSelect className="h-4 w-4 text-emerald-600" /> },
-        { label: 'Q3 (75th)', value: formatNumber(summary.q3), icon: <BoxSelect className="h-4 w-4 text-cyan-600" /> },
-        { label: 'IQR', value: formatNumber(summary.iqr), icon: <BoxSelect className="h-4 w-4 text-amber-600" /> },
-        { label: 'Skewness', value: formatNumber(summary.skewness), icon: <TrendingUp className="h-4 w-4 text-orange-600" /> },
-        { label: 'Kurtosis', value: formatNumber(summary.kurtosis), icon: <TrendingUp className="h-4 w-4 text-rose-600" /> },
+        {
+          category: 'centralTendency',
+          items: [
+            { label: 'Count', value: formatNumber(summary.count, 0), icon: <Hash className="h-4 w-4" /> },
+            { label: 'Mean', value: formatNumber(summary.mean), icon: <TrendingUp className="h-4 w-4" /> },
+            { label: 'Median', value: formatNumber(summary.median), icon: <TrendingUp className="h-4 w-4" /> },
+            { label: 'Mode', value: summary.mode.length > 0 ? summary.mode.map((m) => formatNumber(m)).join(', ') : 'None', icon: <BarChart3 className="h-4 w-4" /> },
+          ],
+        },
+        {
+          category: 'dispersion',
+          items: [
+            { label: 'Std Dev', value: formatNumber(summary.stdDev), icon: <Activity className="h-4 w-4" /> },
+            { label: 'Variance', value: formatNumber(summary.variance), icon: <Activity className="h-4 w-4" /> },
+            { label: 'Range', value: formatNumber(summary.range), icon: <Activity className="h-4 w-4" /> },
+          ],
+        },
+        {
+          category: 'position',
+          items: [
+            { label: 'Min', value: formatNumber(summary.min), icon: <BoxSelect className="h-4 w-4" /> },
+            { label: 'Max', value: formatNumber(summary.max), icon: <BoxSelect className="h-4 w-4" /> },
+            { label: 'Q1 (25th)', value: formatNumber(summary.q1), icon: <BoxSelect className="h-4 w-4" /> },
+            { label: 'Q3 (75th)', value: formatNumber(summary.q3), icon: <BoxSelect className="h-4 w-4" /> },
+            { label: 'IQR', value: formatNumber(summary.iqr), icon: <BoxSelect className="h-4 w-4" /> },
+          ],
+        },
+        {
+          category: 'shape',
+          items: [
+            { label: 'Skewness', value: formatNumber(summary.skewness), icon: <TrendingUp className="h-4 w-4" /> },
+            { label: 'Kurtosis', value: formatNumber(summary.kurtosis), icon: <TrendingUp className="h-4 w-4" /> },
+          ],
+        },
       ]
     : [];
 
@@ -578,7 +778,7 @@ export default function DescriptiveStatistics() {
         </CardContent>
       </Card>
 
-      {/* Summary Measures Table */}
+      {/* Enhanced Summary Measures - Grouped by Category */}
       {summary && (
         <Card>
           <CardHeader>
@@ -587,26 +787,92 @@ export default function DescriptiveStatistics() {
               Summary Measures &mdash; {summary.name}
             </CardTitle>
             <CardDescription>
-              Central tendency, dispersion, and shape statistics
+              Central tendency, dispersion, position, and shape statistics
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Responsive grid of stat cards instead of a table that can overflow */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {summaryRows.map((row) => (
-                <div
-                  key={row.label}
-                  className="rounded-lg border bg-muted/30 dark:bg-slate-800/50 p-3 min-w-0"
-                >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    {row.icon}
-                    <span className="text-xs text-muted-foreground truncate">{row.label}</span>
+            <div className="space-y-5">
+              {summaryGroups.map((group) => {
+                const catConfig = STAT_CATEGORIES[group.category];
+                return (
+                  <div key={group.category}>
+                    {/* Category Header */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${catConfig.iconBg}`}>
+                        <span className={`text-xs font-bold ${catConfig.iconColor}`}>
+                          {group.category === 'centralTendency' ? 'μ' : group.category === 'dispersion' ? 'σ' : group.category === 'position' ? 'Q' : 'S'}
+                        </span>
+                      </span>
+                      <h4 className="text-sm font-semibold text-foreground">{catConfig.label}</h4>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                    {/* Stat Cards Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {group.items.map((row) => (
+                        <div
+                          key={row.label}
+                          className={`rounded-lg border border-l-4 ${catConfig.border} bg-gradient-to-br ${catConfig.gradient} p-3 min-w-0`}
+                        >
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className={catConfig.iconColor}>{row.icon}</span>
+                            <span className="text-xs text-muted-foreground truncate">{row.label}</span>
+                          </div>
+                          <p className="text-sm font-semibold font-mono truncate" title={row.value}>
+                            {row.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-sm font-semibold font-mono truncate" title={row.value}>
-                    {row.value}
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Distribution Shape Indicator Card */}
+      {summary && distributionShape && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Activity className="h-4 w-4 text-teal-600 shrink-0" />
+              Distribution Shape &mdash; {summary.name}
+            </CardTitle>
+            <CardDescription>
+              Classification based on skewness and kurtosis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className={`rounded-xl border p-5 ${SHAPE_CONFIG[distributionShape].bgClass}`}>
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* Mini SVG bell curve */}
+                <div className="shrink-0">
+                  <DistributionCurveSVG
+                    shape={distributionShape}
+                    color={SHAPE_CONFIG[distributionShape].svgColor}
+                  />
+                </div>
+                {/* Classification info */}
+                <div className="flex-1 text-center sm:text-left min-w-0">
+                  <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
+                    <Badge className={SHAPE_CONFIG[distributionShape].badgeClass}>
+                      {distributionShape}
+                    </Badge>
+                  </div>
+                  <p className={`text-sm ${SHAPE_CONFIG[distributionShape].textClass}`}>
+                    The distribution appears{' '}
+                    <span className="font-semibold">{distributionShape.toLowerCase()}</span>{' '}
+                    (skewness = {formatNumber(summary.skewness)}, kurtosis = {formatNumber(summary.kurtosis)})
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {distributionShape === 'Normal' && 'Data is approximately symmetric with moderate peakedness, similar to a Gaussian bell curve.'}
+                    {distributionShape === 'Right-Skewed' && 'The right tail is longer than the left. The mean is typically greater than the median, suggesting a few high values pull the distribution.'}
+                    {distributionShape === 'Left-Skewed' && 'The left tail is longer than the right. The mean is typically less than the median, suggesting a few low values pull the distribution.'}
+                    {distributionShape === 'Uniform' && 'Values are relatively evenly distributed across the range with no clear peak, suggesting a flat distribution.'}
                   </p>
                 </div>
-              ))}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1069,16 +1335,107 @@ export default function DescriptiveStatistics() {
         </div>
       )}
 
-      {/* Confidence Intervals */}
+      {/* Confidence Intervals - Visual Horizontal Bars */}
       {confidenceIntervals.length > 0 && (
         <Card>
           <CardHeader>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ShieldCheck className="h-4 w-4 text-teal-600 shrink-0" />
+                  Confidence Intervals for the Mean
+                </CardTitle>
+                <CardDescription>
+                  Visual interval estimates for the population mean of each numeric column
+                </CardDescription>
+              </div>
+              <Badge className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300 text-xs">
+                95% Confidence Level
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {confidenceIntervals.map((ci) => {
+                if (!Number.isFinite(ci.lower) || !Number.isFinite(ci.upper) || !Number.isFinite(ci.mean)) {
+                  return (
+                    <div key={ci.column} className="flex items-center gap-3">
+                      <div className="w-24 sm:w-32 shrink-0 text-sm font-medium truncate" title={ci.column}>
+                        {ci.column}
+                      </div>
+                      <div className="flex-1 text-xs text-muted-foreground">Insufficient data</div>
+                    </div>
+                  );
+                }
+
+                const rangeSpan = ciGlobalRange.max - ciGlobalRange.min || 1;
+                const toPercent = (val: number) => ((val - ciGlobalRange.min) / rangeSpan) * 100;
+
+                const lowerPct = Math.max(0, Math.min(100, toPercent(ci.lower)));
+                const upperPct = Math.max(0, Math.min(100, toPercent(ci.upper)));
+                const meanPct = Math.max(0, Math.min(100, toPercent(ci.mean)));
+
+                const barWidth = Math.max(upperPct - lowerPct, 1);
+
+                return (
+                  <div key={ci.column} className="flex items-center gap-3">
+                    <div className="w-24 sm:w-32 shrink-0 text-sm font-medium truncate" title={ci.column}>
+                      {ci.column}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="relative h-8 bg-muted/40 dark:bg-slate-800/50 rounded-md overflow-hidden">
+                        {/* CI Bar */}
+                        <div
+                          className="absolute top-1 h-6 rounded-md bg-teal-400/70 dark:bg-teal-500/60"
+                          style={{ left: `${lowerPct}%`, width: `${barWidth}%` }}
+                        />
+                        {/* Mean dot */}
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 shadow-sm z-10"
+                          style={{ left: `calc(${meanPct}% - 6px)` }}
+                          title={`Mean: ${formatNumber(ci.mean, 4)}`}
+                        />
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right min-w-[100px] sm:min-w-[130px]">
+                      <div className="text-xs font-mono text-muted-foreground">
+                        <span title="Lower bound">{formatNumber(ci.lower, 3)}</span>
+                        {' – '}
+                        <span title="Upper bound">{formatNumber(ci.upper, 3)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        MoE: ±{formatNumber(ci.marginOfError, 3)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Legend */}
+            <div className="flex flex-wrap gap-4 mt-4 text-xs text-muted-foreground justify-center">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-6 h-2.5 rounded-sm bg-teal-400/70 dark:bg-teal-500/60" />
+                95% CI Range
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white dark:border-slate-900" />
+                Sample Mean
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* All-Column Summary Table */}
+      {allColumnSummaries.length > 0 && (
+        <Card>
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <GitCompare className="h-4 w-4 text-cyan-600 shrink-0" />
-              95% Confidence Intervals for the Mean
+              <Hash className="h-4 w-4 text-teal-600 shrink-0" />
+              All-Column Summary Overview
             </CardTitle>
             <CardDescription>
-              Interval estimates for the population mean of each numeric column
+              Quick overview of key statistics across all numeric variables
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1086,25 +1443,42 @@ export default function DescriptiveStatistics() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[100px]">Column</TableHead>
+                    <TableHead className="min-w-[80px]">Column</TableHead>
+                    <TableHead className="text-right">Count</TableHead>
                     <TableHead className="text-right">Mean</TableHead>
-                    <TableHead className="text-right">Lower</TableHead>
-                    <TableHead className="text-right">Upper</TableHead>
-                    <TableHead className="text-right">Margin of Error</TableHead>
-                    <TableHead className="text-right">Standard Error</TableHead>
+                    <TableHead className="text-right">StdDev</TableHead>
+                    <TableHead className="text-right">Min</TableHead>
+                    <TableHead className="text-right">Median</TableHead>
+                    <TableHead className="text-right">Max</TableHead>
+                    <TableHead className="text-right">Skewness</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {confidenceIntervals.map((ci) => (
-                    <TableRow key={ci.column}>
-                      <TableCell className="font-medium">{ci.column}</TableCell>
-                      <TableCell className="text-right font-mono">{formatNumber(ci.mean, 4)}</TableCell>
-                      <TableCell className="text-right font-mono">{formatNumber(ci.lower, 4)}</TableCell>
-                      <TableCell className="text-right font-mono">{formatNumber(ci.upper, 4)}</TableCell>
-                      <TableCell className="text-right font-mono">{formatNumber(ci.marginOfError, 4)}</TableCell>
-                      <TableCell className="text-right font-mono">{formatNumber(ci.standardError, 4)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {allColumnSummaries.map((s) => {
+                    const isSelected = s.name === activeNumericCol;
+                    return (
+                      <TableRow
+                        key={s.name}
+                        className={isSelected ? 'bg-teal-50 dark:bg-teal-900/20' : ''}
+                      >
+                        <TableCell className={`font-medium ${isSelected ? 'text-teal-700 dark:text-teal-400' : ''}`}>
+                          <div className="flex items-center gap-1.5">
+                            {isSelected && (
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
+                            )}
+                            <span className="truncate" title={s.name}>{s.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{formatNumber(s.count, 0)}</TableCell>
+                        <TableCell className="text-right font-mono">{formatNumber(s.mean)}</TableCell>
+                        <TableCell className="text-right font-mono">{formatNumber(s.stdDev)}</TableCell>
+                        <TableCell className="text-right font-mono">{formatNumber(s.min)}</TableCell>
+                        <TableCell className="text-right font-mono">{formatNumber(s.median)}</TableCell>
+                        <TableCell className="text-right font-mono">{formatNumber(s.max)}</TableCell>
+                        <TableCell className="text-right font-mono">{formatNumber(s.skewness)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </ScrollArea>

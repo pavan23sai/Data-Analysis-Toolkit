@@ -19,6 +19,10 @@ import {
   Type,
   Calendar,
   Fingerprint,
+  Zap,
+  Ruler,
+  Scaling,
+  SquareRadical,
 } from 'lucide-react';
 import {
   Card,
@@ -62,6 +66,7 @@ import {
   mode,
   min as statMin,
   max as statMax,
+  standardDeviation,
 } from '@/lib/statistics';
 import {
   BarChart,
@@ -284,6 +289,98 @@ export default function DataExploration() {
   // ===== Outlier Detection =====
   const numericCols = getNumericColumns();
   const [selectedOutlierCol, setSelectedOutlierCol] = useState<string>('');
+
+  // ===== Data Transformation =====
+  const [selectedLogCol, setSelectedLogCol] = useState<string>('');
+  const [selectedZscoreCol, setSelectedZscoreCol] = useState<string>('');
+  const [selectedNormCol, setSelectedNormCol] = useState<string>('');
+  const [selectedSqrtCol, setSelectedSqrtCol] = useState<string>('');
+  const [transformMessage, setTransformMessage] = useState<string | null>(null);
+
+  const applyTransformation = useCallback(
+    (columnName: string, suffix: string, transformFn: (val: number) => number) => {
+      if (!dataset || dataset.rows.length === 0) return;
+      const colIdx = dataset.headers.indexOf(columnName);
+      if (colIdx === -1) return;
+
+      const newHeader = `${columnName}${suffix}`;
+      // Check if column already exists
+      if (dataset.headers.includes(newHeader)) {
+        setTransformMessage(`Column "${newHeader}" already exists. Remove it first to re-apply.`);
+        setTimeout(() => setTransformMessage(null), 4000);
+        return;
+      }
+
+      const newHeaders = [...dataset.headers, newHeader];
+      const newRows = dataset.rows.map((row) => {
+        const val = row[colIdx];
+        if (val === null || val === undefined || val === '' || isNaN(Number(val))) {
+          return [...row, null];
+        }
+        const numVal = Number(val);
+        const transformed = transformFn(numVal);
+        if (transformed === null || isNaN(transformed) || !isFinite(transformed)) {
+          return [...row, null];
+        }
+        return [...row, Number(transformed.toFixed(6))];
+      });
+
+      const newRawRows = newRows.map((row) => {
+        const obj: Record<string, string | number | null> = {};
+        newHeaders.forEach((header, idx) => {
+          obj[header] = row[idx] ?? null;
+        });
+        return obj;
+      });
+
+      setDataset({ ...dataset, headers: newHeaders, rows: newRows, rawRows: newRawRows });
+      setTransformMessage(`Created column "${newHeader}" with ${suffix.replace('_', '')} transformation.`);
+      setTimeout(() => setTransformMessage(null), 4000);
+    },
+    [dataset, setDataset]
+  );
+
+  const handleLogTransform = useCallback(() => {
+    if (!selectedLogCol) return;
+    applyTransformation(selectedLogCol, '_log', (val) => {
+      if (val <= 0) return null as unknown as number;
+      return Math.log10(val);
+    });
+  }, [selectedLogCol, applyTransformation]);
+
+  const handleZScoreTransform = useCallback(() => {
+    if (!selectedZscoreCol) return;
+    const colData = getColumnData(selectedZscoreCol);
+    const m = mean(colData);
+    const sd = standardDeviation(colData);
+    if (sd === 0) {
+      setTransformMessage('Cannot standardize: column has zero standard deviation.');
+      setTimeout(() => setTransformMessage(null), 4000);
+      return;
+    }
+    applyTransformation(selectedZscoreCol, '_zscore', (val) => (val - m) / sd);
+  }, [selectedZscoreCol, applyTransformation, getColumnData]);
+
+  const handleMinMaxNormalize = useCallback(() => {
+    if (!selectedNormCol) return;
+    const colData = getColumnData(selectedNormCol);
+    const minVal = statMin(colData);
+    const maxVal = statMax(colData);
+    if (maxVal === minVal) {
+      setTransformMessage('Cannot normalize: column has zero range (all values identical).');
+      setTimeout(() => setTransformMessage(null), 4000);
+      return;
+    }
+    applyTransformation(selectedNormCol, '_norm', (val) => (val - minVal) / (maxVal - minVal));
+  }, [selectedNormCol, applyTransformation, getColumnData]);
+
+  const handleSqrtTransform = useCallback(() => {
+    if (!selectedSqrtCol) return;
+    applyTransformation(selectedSqrtCol, '_sqrt', (val) => {
+      if (val < 0) return null as unknown as number;
+      return Math.sqrt(val);
+    });
+  }, [selectedSqrtCol, applyTransformation]);
 
   const outlierResult = useMemo(() => {
     if (!selectedOutlierCol) return null;
@@ -907,6 +1004,212 @@ export default function DataExploration() {
               <div className="flex items-center gap-2 rounded-md bg-muted/50 dark:bg-slate-800/50 border dark:border-slate-700 px-3 py-4 text-sm text-muted-foreground justify-center">
                 <Info className="size-4 shrink-0" />
                 No numeric columns available for outlier detection
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ===== Data Transformation ===== */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Zap className="size-5 text-emerald-600 dark:text-emerald-400" />
+            <CardTitle className="text-lg">Data Transformation</CardTitle>
+          </div>
+          <CardDescription>
+            Apply mathematical transformations to numeric columns, creating new columns with the result
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-5">
+            {/* Transform Message */}
+            {transformMessage && (
+              <div className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm border ${
+                transformMessage.includes('already exists') || transformMessage.includes('Cannot')
+                  ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+                  : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+              }`}>
+                {transformMessage.includes('already exists') || transformMessage.includes('Cannot') ? (
+                  <AlertTriangle className="size-4 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="size-4 shrink-0" />
+                )}
+                {transformMessage}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Log Transform */}
+              <div className="rounded-lg border-2 border-teal-200 dark:border-teal-800 bg-teal-50/30 dark:bg-teal-950/10 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center size-8 rounded-md bg-teal-100 dark:bg-teal-900/50">
+                    <Zap className="size-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Log Transform</h4>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Apply log₁₀ transformation. Use for right-skewed data to normalize distribution. Requires positive values (&gt; 0).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedLogCol} onValueChange={setSelectedLogCol}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {numericCols.map((col) => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={handleLogTransform}
+                    disabled={!selectedLogCol}
+                    className="bg-teal-600 hover:bg-teal-700 text-white shrink-0"
+                  >
+                    Transform
+                  </Button>
+                </div>
+                {selectedLogCol && (
+                  <p className="text-[10px] text-teal-600 dark:text-teal-400 flex items-center gap-1">
+                    <Info className="size-3 shrink-0" />
+                    New column: <span className="font-mono font-medium">{selectedLogCol}_log</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Z-Score Standardization */}
+              <div className="rounded-lg border-2 border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center size-8 rounded-md bg-amber-100 dark:bg-amber-900/50">
+                    <Ruler className="size-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Standardization (Z-Score)</h4>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Transform to mean = 0, std = 1. Use to compare variables on different scales or for algorithms assuming normality.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedZscoreCol} onValueChange={setSelectedZscoreCol}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {numericCols.map((col) => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={handleZScoreTransform}
+                    disabled={!selectedZscoreCol}
+                    className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
+                  >
+                    Transform
+                  </Button>
+                </div>
+                {selectedZscoreCol && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <Info className="size-3 shrink-0" />
+                    New column: <span className="font-mono font-medium">{selectedZscoreCol}_zscore</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Min-Max Normalization */}
+              <div className="rounded-lg border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center size-8 rounded-md bg-emerald-100 dark:bg-emerald-900/50">
+                    <Scaling className="size-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Min-Max Normalization</h4>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Scale values to [0, 1] range. Use when you need bounded values or for neural network inputs.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedNormCol} onValueChange={setSelectedNormCol}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {numericCols.map((col) => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={handleMinMaxNormalize}
+                    disabled={!selectedNormCol}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                  >
+                    Transform
+                  </Button>
+                </div>
+                {selectedNormCol && (
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Info className="size-3 shrink-0" />
+                    New column: <span className="font-mono font-medium">{selectedNormCol}_norm</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Square Root Transform */}
+              <div className="rounded-lg border-2 border-rose-200 dark:border-rose-800 bg-rose-50/30 dark:bg-rose-950/10 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center size-8 rounded-md bg-rose-100 dark:bg-rose-900/50">
+                    <SquareRadical className="size-4 text-rose-600 dark:text-rose-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Square Root Transform</h4>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Apply √ transformation. A milder alternative to log for reducing right skew. Requires non-negative values (≥ 0).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedSqrtCol} onValueChange={setSelectedSqrtCol}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {numericCols.map((col) => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={handleSqrtTransform}
+                    disabled={!selectedSqrtCol}
+                    className="bg-rose-600 hover:bg-rose-700 text-white shrink-0"
+                  >
+                    Transform
+                  </Button>
+                </div>
+                {selectedSqrtCol && (
+                  <p className="text-[10px] text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <Info className="size-3 shrink-0" />
+                    New column: <span className="font-mono font-medium">{selectedSqrtCol}_sqrt</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* No numeric columns warning */}
+            {numericCols.length === 0 && (
+              <div className="flex items-center gap-2 rounded-md bg-muted/50 dark:bg-slate-800/50 border dark:border-slate-700 px-3 py-4 text-sm text-muted-foreground justify-center">
+                <Info className="size-4 shrink-0" />
+                No numeric columns available for transformation
               </div>
             )}
           </div>

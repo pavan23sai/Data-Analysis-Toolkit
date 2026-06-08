@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { useDataset } from '@/hooks/useDataset';
+import { computeColumnSummary, mean, standardDeviation } from '@/lib/statistics';
+import { downloadAsFile, exportNumber } from '@/lib/export';
 import DataUpload from '@/components/DataUpload';
 import DataExploration from '@/components/DataExploration';
 import DescriptiveStatistics from '@/components/DescriptiveStatistics';
@@ -24,6 +26,7 @@ import {
   Sun,
   Moon,
   Keyboard,
+  Download,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -67,7 +70,85 @@ export default function Home() {
   const [fadeKey, setFadeKey] = useState(0);
   const [isFading, setIsFading] = useState(false);
   const dataset = useDataset(s => s.dataset);
+  const { getNumericColumns, getColumnData } = useDataset();
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Export All Results handler
+  const handleExportAll = useCallback(() => {
+    if (!dataset) return;
+
+    const numericCols = getNumericColumns();
+    const lines: string[] = [];
+
+    lines.push('========================================');
+    lines.push('  Data Analysis Toolkit — Full Report');
+    lines.push('========================================');
+    lines.push(`Generated: ${new Date().toLocaleString()}`);
+    lines.push('');
+
+    // Data Overview
+    lines.push('--- Data Overview ---');
+    lines.push(`File Name: ${dataset.fileName}`);
+    lines.push(`Total Rows: ${dataset.rows.length}`);
+    lines.push(`Total Columns: ${dataset.headers.length}`);
+    lines.push(`Column Names: ${dataset.headers.join(', ')}`);
+    lines.push(`Numeric Columns (${numericCols.length}): ${numericCols.join(', ')}`);
+    lines.push('');
+
+    // Numeric Column Summaries
+    if (numericCols.length > 0) {
+      lines.push('--- Numeric Column Summaries ---');
+      lines.push('');
+      for (const col of numericCols) {
+        const data = getColumnData(col);
+        if (data.length === 0) continue;
+        const summary = computeColumnSummary(col, data);
+        lines.push(`Column: ${col}`);
+        lines.push(`  Count:      ${exportNumber(summary.count, 0)}`);
+        lines.push(`  Mean:       ${exportNumber(summary.mean)}`);
+        lines.push(`  Std Dev:    ${exportNumber(summary.stdDev)}`);
+        lines.push(`  Min:        ${exportNumber(summary.min)}`);
+        lines.push(`  Max:        ${exportNumber(summary.max)}`);
+        lines.push(`  Median:     ${exportNumber(summary.median)}`);
+        lines.push(`  Q1:         ${exportNumber(summary.q1)}`);
+        lines.push(`  Q3:         ${exportNumber(summary.q3)}`);
+        lines.push(`  IQR:        ${exportNumber(summary.iqr)}`);
+        lines.push(`  Skewness:   ${exportNumber(summary.skewness)}`);
+        lines.push(`  Kurtosis:   ${exportNumber(summary.kurtosis)}`);
+        lines.push(`  Missing:    ${summary.missing}`);
+        lines.push('');
+      }
+    }
+
+    // Categorical column summaries
+    const catCols = dataset.headers.filter(h => !numericCols.includes(h));
+    if (catCols.length > 0) {
+      lines.push('--- Categorical Column Summaries ---');
+      lines.push('');
+      for (const col of catCols) {
+        const idx = dataset.headers.indexOf(col);
+        const values = dataset.rows.map(row => String(row[idx] ?? '')).filter(v => v !== '');
+        const freq = new Map<string, number>();
+        values.forEach(v => freq.set(v, (freq.get(v) || 0) + 1));
+        const sorted = Array.from(freq.entries()).sort((a, b) => b[1] - a[1]);
+        lines.push(`Column: ${col}`);
+        lines.push(`  Unique Values: ${freq.size}`);
+        lines.push(`  Total Count: ${values.length}`);
+        lines.push(`  Top 5 Values:`);
+        for (const [val, count] of sorted.slice(0, 5)) {
+          lines.push(`    ${val}: ${count}`);
+        }
+        lines.push('');
+      }
+    }
+
+    lines.push('========================================');
+    lines.push('  End of Full Report');
+    lines.push('========================================');
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    downloadAsFile(`data-analysis-full-report-${timestamp}.txt`, lines.join('\n'), 'text/plain');
+  }, [dataset, getNumericColumns, getColumnData]);
 
   const handleSectionChange = useCallback((sectionId: string) => {
     if (activeSection === sectionId) return;
@@ -138,7 +219,7 @@ export default function Home() {
                 <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Statistical Analysis Made Simple</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {dataset ? (
                 <Badge variant="secondary" className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
@@ -149,6 +230,17 @@ export default function Home() {
                   No data loaded
                 </Badge>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportAll}
+                disabled={!dataset}
+                className="gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-300 dark:border-emerald-700 dark:hover:bg-emerald-950/50 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                aria-label="Export all results"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export All</span>
+              </Button>
               <ThemeToggle />
             </div>
           </div>

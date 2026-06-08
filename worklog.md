@@ -141,6 +141,13 @@ Stage Summary:
 8. ✅ Animated tab transitions and progress indicators
 9. ✅ Completeness progress bars in missing value table
 10. ✅ Visible hint text for disabled cleaning buttons
+11. ✅ Distribution Shape Indicator (Normal/Right-Skewed/Left-Skewed/Uniform with SVG curves)
+12. ✅ Category-Grouped Summary Cards (Central Tendency, Dispersion, Position, Shape)
+13. ✅ Visual Confidence Interval bars with mean dots
+14. ✅ All-Column Summary Table with selection highlighting
+15. ✅ Data Transformation (Log, Z-Score, Min-Max, Square Root transforms)
+16. ✅ Export Report buttons (Descriptive Statistics, Normality Testing, global header)
+17. ✅ Export utility module (/src/lib/export.ts)
 
 ### Styling Improvements
 1. ✅ Animated gradient border on active tab
@@ -156,9 +163,179 @@ Stage Summary:
 2. **Shapiro-Wilk approximation**: Uses a simplified coefficient method (Blom's approximation) rather than exact tabled coefficients. The W statistic is clamped to ≤ 1 but may not be as precise as R's shapiro.test() for very large samples.
 3. **GitHub Pages deployment**: Configured but not tested end-to-end. User needs to push to GitHub and enable Pages in repo settings.
 
-## Priority Recommendations for Next Phase
-1. Test GitHub Pages deployment end-to-end
-2. Add data export/download for analysis results (PDF report generation)
-3. Add more sample datasets for testing different scenarios
-4. Consider adding a "Help" or "Tutorial" tab for first-time users
-5. Add data transformation features (log transform, standardization)
+---
+
+Task ID: 10
+Agent: Main Agent
+Task: Phase 2 QA & Enhancement - Test, fix bugs, add features
+
+Work Log:
+- Reviewed existing worklog.md and assessed project status (8 tabs, dark mode working, all functional)
+- Tested application with agent-browser across all 8 tabs (Data Upload, Data Exploration, Descriptive Statistics, Probability Distributions, Normality Testing, Z-Score & CLT, Parametric Tests, Non-Parametric Tests)
+- Used VLM to analyze screenshots for overlapping elements, layout issues, and visual quality
+- QA findings: No critical overlapping issues, minor spacing inconsistencies, descriptive stats rated 9/10
+- Dark mode tested and verified working (8/10 visual quality)
+- Delegated 3 parallel subagent tasks:
+  - Task 3: Enhanced DescriptiveStatistics with 4 new features
+  - Task 5: Added Data Transformation section to DataExploration
+  - Task 6: Added Export/Download analysis results feature
+- All 3 subagent tasks completed successfully
+- Ran lint check - all clean
+- Verified dev server compiles without errors
+
+Stage Summary:
+- Distribution Shape Indicator Card added (Normal/Right-Skewed/Left-Skewed/Uniform with mini SVG curves)
+- Enhanced Summary Measures Cards with category grouping (Central Tendency, Dispersion, Position, Shape)
+- Visual Confidence Interval bars replacing plain table
+- All-Column Summary Table with selection highlighting
+- Data Transformation section (Log, Z-Score, Min-Max, Square Root transforms)
+- Export Report buttons added to DescriptiveStatistics, NormalityTesting, and global header
+- New utility module: /src/lib/export.ts
+- All features responsive and dark-mode compatible
+- Lint clean, dev server stable
+
+---
+
+Task ID: 5
+Agent: Sub Agent
+Task: Add Data Transformation section to DataExploration.tsx
+
+Work Log:
+- Added new lucide-react icons: Zap, Ruler, Scaling, SquareRadical
+- Added standardDeviation import from statistics.ts
+- Added state variables for 4 transform column selectors and transform message
+- Implemented `applyTransformation` generic handler that adds new column to dataset in Zustand store
+- Implemented `handleLogTransform` (log₁₀, suffix _log, requires val > 0)
+- Implemented `handleZScoreTransform` ((x-μ)/σ, suffix _zscore, validates σ≠0)
+- Implemented `handleMinMaxNormalize` ((x-min)/(max-min), suffix _norm, validates range≠0)
+- Implemented `handleSqrtTransform` (√x, suffix _sqrt, requires val ≥ 0)
+- Added Data Transformation card UI after Outlier Detection section:
+  - Card with Zap icon + title + description
+  - Color-coded 2-col grid (md:grid-cols-2):
+    - Log Transform: teal border, Zap icon, log₁₀ description
+    - Z-Score: amber border, Ruler icon, standardization description
+    - Min-Max: emerald border, Scaling icon, normalization description
+    - Sqrt: rose border, SquareRadical icon, square root description
+  - Each sub-section: icon badge, title, description, Select dropdown, Transform button
+  - Success/warning message banner (emerald for success, amber for errors)
+  - Preview of new column name when column selected
+  - No numeric columns fallback message
+  - Dark mode support throughout
+  - Responsive layout (1 col mobile, 2 cols desktop)
+- No store changes needed — uses existing setDataset with updated headers/rows/rawRows
+- Lint passes, dev server compiles successfully
+
+Stage Summary:
+- Data Transformation section fully functional with 4 transform types
+- Transformed data added as new columns to dataset in Zustand store
+- Color-coded UI with responsive layout and dark mode support
+
+---
+
+Task ID: 9
+Agent: Sub Agent
+Task: Add Export Analysis Results feature to Data Analysis Toolkit
+
+Work Log:
+- Created `/home/z/my-project/src/lib/export.ts` with utility functions:
+  - `downloadAsFile(filename, content, type)`: Creates Blob and triggers browser download
+  - `exportNumber(val, decimals)`: Formats numbers for export, returns 'N/A' for NaN/Infinity
+- Modified `DescriptiveStatistics.tsx`:
+  - Added Download icon and Button imports
+  - Added `downloadAsFile` and `exportNumber` imports from export.ts
+  - Added `handleExportReport` function generating comprehensive plain-text report with:
+    - File info, row/column counts
+    - Summary measures for selected numeric column
+    - Outlier info (IQR method)
+    - Correlation matrix as formatted text table
+    - Correlation summary (strongest positive/negative)
+    - 95% Confidence Intervals table
+    - Categorical frequency chart data
+  - Added "Download Report" button to main CardHeader with teal outline style
+  - Button uses responsive text (hidden on mobile, visible on sm+)
+- Modified `NormalityTesting.tsx`:
+  - Added Download icon and Button imports
+  - Added `downloadAsFile` and `exportNumber` imports from export.ts
+  - Added `handleExportReport` function generating comprehensive plain-text report with:
+    - File info, column name, data points
+    - Test results summary table (test name, statistic, p-value, conclusion)
+    - Shapiro-Wilk detail (W statistic, p-value, conclusion)
+    - Kolmogorov-Smirnov detail (D statistic, p-value, conclusion)
+    - Anderson-Darling detail (A² statistic, p-value, critical values table, conclusion)
+    - Column descriptive stats (mean, std dev, min, max)
+  - Added "Download Report" button to Column Selection CardHeader with teal outline style
+  - Button conditionally rendered only when column is selected and has >= 3 data points
+- Modified `page.tsx`:
+  - Added Download icon import
+  - Added `computeColumnSummary` and `mean` imports from statistics.ts
+  - Added `downloadAsFile` and `exportNumber` imports from export.ts
+  - Added `getNumericColumns` and `getColumnData` from useDataset hook
+  - Added `handleExportAll` callback generating comprehensive full report with:
+    - Data overview (file name, rows, columns)
+    - Numeric column summaries (count, mean, std dev, min, max, median, Q1, Q3, IQR, skewness, kurtosis, missing)
+    - Categorical column summaries (unique values, count, top 5 values)
+  - Added "Export All" button to header next to theme toggle with emerald outline style
+  - Button disabled when no dataset is loaded
+- All lint checks pass
+- Dev server compiles successfully
+
+Stage Summary:
+- Export functionality added to 3 files: DescriptiveStatistics, NormalityTesting, page.tsx
+- New utility module: `/home/z/my-project/src/lib/export.ts`
+- Users can now download plain-text reports from each analysis tab and from the global header
+
+---
+
+Task ID: 3
+Agent: Sub Agent
+Task: Enhance DescriptiveStatistics.tsx with 4 major feature improvements
+
+Work Log:
+- Added new Lucide icon imports: Activity, ShieldCheck
+- Added STAT_CATEGORIES config object for category-based styling (centralTendency=teal, dispersion=amber, position=cyan, shape=rose)
+- Added classifyDistribution() function to determine distribution shape (Normal, Right-Skewed, Left-Skewed, Uniform) based on skewness and kurtosis thresholds
+- Added SHAPE_CONFIG with color-coding: Normal=emerald, Right-skewed=amber, Left-skewed=rose, Uniform=slate
+- Added DistributionCurveSVG component rendering mini bell curves as SVG paths with shape-appropriate curves
+- Added allColumnSummaries useMemo computing summary stats for ALL numeric columns
+- Added distributionShape useMemo for selected column classification
+- Added ciGlobalRange useMemo for computing global CI range across all columns
+
+Feature 1 - Distribution Shape Indicator Card:
+- New card below Summary Measures showing classification with mini SVG bell curve
+- Badge with shape name (Normal/Right-Skewed/Left-Skewed/Uniform)
+- Interpretation text: "The distribution appears [shape] (skewness = X, kurtosis = Y)"
+- Additional contextual description for each shape type
+- Color-coded background matching shape classification
+
+Feature 2 - Enhanced Summary Measures Cards:
+- Stats grouped into 4 categories with headers: Central Tendency, Dispersion, Position, Shape
+- Category headers with icon badges (μ, σ, Q, S) and divider lines
+- Each card has subtle gradient background based on category
+- 4px colored left border indicating category
+- Responsive grid layout preserved (2/3/4/5 columns by breakpoint)
+
+Feature 3 - Confidence Interval Visual:
+- Replaced plain table with visual horizontal bars
+- Each row: column name, CI bar with teal range and emerald mean dot, text values
+- 95% Confidence Level badge in card header
+- Global range normalization for consistent bar sizing
+- Margin of error displayed per row
+- Legend for CI Range and Sample Mean
+
+Feature 4 - All-Column Summary Table:
+- New card showing key stats for ALL numeric columns at once
+- Table columns: Column, Count, Mean, StdDev, Min, Median, Max, Skewness
+- Currently selected column row highlighted with teal background and dot indicator
+- ScrollArea for responsive overflow handling
+
+- Fixed react-hooks/rules-of-hooks error by moving all useMemo hooks before early returns
+- All lint checks pass
+- Dev server compiles successfully
+
+Stage Summary:
+- 4 major feature enhancements completed in DescriptiveStatistics.tsx
+- Distribution shape classification with visual SVG curves
+- Category-grouped stat cards with gradient backgrounds and color borders
+- Visual CI bars replacing plain table
+- All-column overview table with selection highlighting
+- All features responsive and dark-mode compatible

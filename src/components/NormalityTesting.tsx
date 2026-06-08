@@ -65,7 +65,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   Columns3,
+  Download,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { downloadAsFile, exportNumber } from '@/lib/export'
 
 const testResultsChartConfig: ChartConfig = {
   frequency: {
@@ -202,6 +205,107 @@ export default function NormalityTesting() {
     return rows
   }, [shapiroWilkResult, ksResult, adResult])
 
+  // Generate normality testing report content
+  const handleExportReport = () => {
+    if (!dataset || !selectedColumn || columnData.length < 3) return;
+
+    const lines: string[] = [];
+    lines.push('====================================');
+    lines.push('  Normality Testing Report');
+    lines.push('====================================');
+    lines.push(`File: ${dataset.fileName}`);
+    lines.push(`Rows: ${dataset.rows.length}, Columns: ${dataset.headers.length}`);
+    lines.push(`Column Analyzed: ${selectedColumn}`);
+    lines.push(`Data Points: ${columnData.length}`);
+    lines.push('');
+
+    lines.push('--- Test Results Summary ---');
+    lines.push(`Significance Level: α = 0.05`);
+    lines.push('');
+
+    // Summary table
+    lines.push(
+      'Test Name'.padEnd(25) +
+      'Statistic'.padEnd(16) +
+      'P-value'.padEnd(16) +
+      'Conclusion'
+    );
+    lines.push('-'.repeat(80));
+
+    for (const row of summaryTableData) {
+      const statStr = typeof row.statistic === 'number' ? exportNumber(row.statistic, 6) : String(row.statistic);
+      const pValStr = typeof row.pValue === 'number' ? exportNumber(row.pValue, 6) : String(row.pValue);
+      const conclusion = row.reject === null ? 'Inconclusive' : row.reject ? 'Reject H₀' : 'Fail to Reject H₀';
+      lines.push(
+        row.testName.padEnd(25) +
+        statStr.padEnd(16) +
+        pValStr.padEnd(16) +
+        conclusion
+      );
+    }
+    lines.push('');
+
+    // Shapiro-Wilk detail
+    if (shapiroWilkResult) {
+      lines.push('--- Shapiro-Wilk Test (Detail) ---');
+      lines.push(`W Statistic: ${exportNumber(shapiroWilkResult.statistic, 6)}`);
+      lines.push(`P-value: ${exportNumber(shapiroWilkResult.pValue, 6)}`);
+      lines.push(`Conclusion: ${shapiroWilkResult.conclusion}`);
+      lines.push('');
+    }
+
+    // K-S test detail
+    if (ksResult) {
+      lines.push('--- Kolmogorov-Smirnov Test (Detail) ---');
+      lines.push(`D Statistic: ${exportNumber(ksResult.statistic, 6)}`);
+      lines.push(`P-value: ${exportNumber(ksResult.pValue, 6)}`);
+      lines.push(`Conclusion: ${ksResult.conclusion}`);
+      lines.push('');
+    }
+
+    // Anderson-Darling detail
+    if (adResult) {
+      lines.push('--- Anderson-Darling Test (Detail) ---');
+      lines.push(`A² Statistic: ${exportNumber(adResult.statistic, 6)}`);
+      lines.push(`P-value: ${exportNumber(adResult.pValue, 6)}`);
+      lines.push(`Conclusion: ${adResult.conclusion}`);
+      if (adResult.criticalValues && adResult.criticalValues.length > 0) {
+        lines.push('Critical Values:');
+        lines.push(
+          '  Significance Level'.padEnd(25) +
+          'Critical Value'.padEnd(18) +
+          'Result'
+        );
+        for (const cv of adResult.criticalValues) {
+          const exceeds = !isNaN(adResult.statistic) && adResult.statistic > cv.value;
+          lines.push(
+            `  ${exportNumber(cv.level, 3).padEnd(23)}` +
+            `${exportNumber(cv.value, 3).padEnd(18)}` +
+            (exceeds ? 'Reject' : 'Fail to Reject')
+          );
+        }
+      }
+      lines.push('');
+    }
+
+    // Descriptive info
+    const m = mean(columnData);
+    const sd = standardDeviation(columnData);
+    lines.push('--- Column Descriptive Stats ---');
+    lines.push(`Mean: ${exportNumber(m, 4)}`);
+    lines.push(`Std Dev: ${exportNumber(sd, 4)}`);
+    lines.push(`Min: ${exportNumber(Math.min(...columnData), 4)}`);
+    lines.push(`Max: ${exportNumber(Math.max(...columnData), 4)}`);
+    lines.push('');
+
+    lines.push('====================================');
+    lines.push('  End of Report');
+    lines.push('====================================');
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    downloadAsFile(`normality-testing-${selectedColumn}-${timestamp}.txt`, lines.join('\n'), 'text/plain');
+  };
+
   if (!dataset) {
     return (
       <Card className="border-dashed">
@@ -221,10 +325,23 @@ export default function NormalityTesting() {
       {/* Column Selector */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Columns3 className="h-5 w-5 text-teal-600 shrink-0" />
-            Column Selection
-          </CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Columns3 className="h-5 w-5 text-teal-600 shrink-0" />
+              Column Selection
+            </CardTitle>
+            {selectedColumn && columnData.length >= 3 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportReport}
+                className="gap-1.5 text-teal-700 border-teal-300 hover:bg-teal-50 dark:text-teal-300 dark:border-teal-700 dark:hover:bg-teal-950/50 shrink-0"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Download Report</span>
+              </Button>
+            )}
+          </div>
           <CardDescription>
             Select a numeric column from your dataset to test for normality
           </CardDescription>

@@ -650,7 +650,7 @@ export default function DataExploration() {
                 </div>
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    AI Data Insights
+                    AI-Powered Insights
                     <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-teal-300 dark:border-teal-700 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/30 font-mono shrink-0">
                       AI
                     </Badge>

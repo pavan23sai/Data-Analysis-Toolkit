@@ -677,3 +677,43 @@ Stage Summary:
 - Visual polish: hover effects, gradient dividers, test card badges, rounded button corners
 - All features responsive and dark-mode compatible
 - Zero lint errors, clean compilation
+
+---
+Task ID: 4-b
+Agent: Statistical Glossary Agent
+Task: Add Statistical Glossary dialog component
+
+Work Log:
+- Read worklog.md and page.tsx to understand project structure and existing components
+- Verified shadcn/ui Dialog and Input components exist in src/components/ui/
+- Created /home/z/my-project/src/components/StatisticalGlossary.tsx with floating button, dialog, 26 glossary terms across 4 categories, search/filter, expand/collapse, dark mode
+- Added StatisticalGlossary import and component to page.tsx after Back to Top button
+- Ran bun run lint with zero errors
+- Dev server compiles successfully
+
+Stage Summary:
+- StatisticalGlossary component created at /home/z/my-project/src/components/StatisticalGlossary.tsx
+- 26 statistical terms across 4 categories with formulas and examples
+- Floating glossary button accessible from any tab
+- Search/filter with real-time highlighting
+- Expandable category sections with color-coded headers
+- Dark mode support, responsive design, zero lint errors
+
+---
+Task ID: 4-c
+Agent: Styling Enhancement Agent
+Task: Improve styling and visual polish across components
+
+Work Log:
+- NonParametricTests.tsx: Added `className="pb-2"` to header CardHeader for more bottom padding; changed test selection cards grid gap from `gap-3` to `gap-4`; added `min-h-[120px]` to each test card button for consistent card heights; changed "Run Test" button to `className="gap-2 px-6 py-2.5 rounded-xl font-semibold"` for better visual weight; changed test card description `mb-2` to `mb-1` for better spacing; added `py-3` to all 6 TableCell elements in the results table for better vertical padding
+- ProbabilityDistributions.tsx: Added `min-w-[80px]` to each distribution type button for uniform sizing; changed ParamSlider component internal spacing from `space-y-2` to `space-y-3` for better vertical spacing; calculation mode toggle buttons already had `gap-2`
+- DescriptiveStatistics.tsx: Changed Summary Measures card `space-y-5` to `space-y-6` for better breathing room between category groups; added `mt-1` to category header divider for subtle separation; added `even:bg-muted/30` alternating row backgrounds and `transition-colors duration-200 hover:bg-muted/30` to Percentile Table rows; added `transition-colors duration-200 hover:bg-muted/50` to All-Column Summary Table rows
+- DataUpload.tsx: Changed Dataset Overview info cards from `rounded-lg` to `rounded-xl`; added `hover:shadow-md transition-shadow` to all 4 info cards; added `text-xs font-mono` to Data Preview table cells for better data readability; added subtle gradient divider between Dataset Overview and Quality Score sections
+
+Stage Summary:
+- All 4 components improved with specific styling enhancements per VLM QA feedback
+- NonParametricTests: better card heights, grid gaps, button weight, table padding
+- ProbabilityDistributions: uniform button sizing, improved slider spacing
+- DescriptiveStatistics: better category spacing, alternating row colors, transition effects
+- DataUpload: rounded-xl cards, hover shadows, mono font data, gradient divider
+- Zero lint errors after all changes

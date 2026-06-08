@@ -989,7 +989,7 @@ export default function DescriptiveStatistics() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-5">
+            <div className="space-y-6">
               {summaryGroups.map((group) => {
                 const catConfig = STAT_CATEGORIES[group.category];
                 return (
@@ -1002,7 +1002,7 @@ export default function DescriptiveStatistics() {
                         </span>
                       </span>
                       <h4 className="text-sm font-semibold text-foreground">{catConfig.label}</h4>
-                      <div className="flex-1 h-px bg-border" />
+                      <div className="flex-1 h-px bg-border mt-1" />
                     </div>
                     {/* Stat Cards Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -1165,7 +1165,7 @@ export default function DescriptiveStatistics() {
                     return (
                       <tr
                         key={item.p}
-                        className={`border-b last:border-b-0 ${isQuartile ? 'bg-teal-50/50 dark:bg-teal-900/10' : idx % 2 === 0 ? 'bg-muted/20' : ''}`}
+                        className={`border-b last:border-b-0 transition-colors duration-200 hover:bg-muted/30 even:bg-muted/30 ${isQuartile ? 'bg-teal-50/50 dark:bg-teal-900/10' : ''}`}
                       >
                         <td className="py-2 px-3 font-mono text-xs">{item.label}</td>
                         <td className="py-2 px-3 text-muted-foreground">{item.name}</td>
@@ -1811,7 +1811,7 @@ export default function DescriptiveStatistics() {
                     return (
                       <TableRow
                         key={s.name}
-                        className={isSelected ? 'bg-teal-50 dark:bg-teal-900/20' : ''}
+                        className={`transition-colors duration-200 hover:bg-muted/50 ${isSelected ? 'bg-teal-50 dark:bg-teal-900/20' : ''}`}
                       >
                         <TableCell className={`font-medium ${isSelected ? 'text-teal-700 dark:text-teal-400' : ''}`}>
                           <div className="flex items-center gap-1.5">

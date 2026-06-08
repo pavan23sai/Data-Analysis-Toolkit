@@ -559,7 +559,7 @@ export default function DataUpload() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="rounded-lg border bg-gradient-to-br from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
+                <div className="rounded-xl border bg-gradient-to-br from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                     <FileSpreadsheet className="size-4" />
                     <span className="text-xs font-medium uppercase tracking-wider">File</span>
@@ -571,7 +571,7 @@ export default function DataUpload() {
                     <p className="mt-0.5 text-[10px] text-muted-foreground">{fileInfo.size} • {fileInfo.lastModified}</p>
                   )}
                 </div>
-                <div className="rounded-lg border bg-gradient-to-br from-teal-50 to-cyan-50 p-4 dark:from-teal-950/30 dark:to-cyan-950/30">
+                <div className="rounded-xl border bg-gradient-to-br from-teal-50 to-cyan-50 p-4 dark:from-teal-950/30 dark:to-cyan-950/30 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2 text-teal-600 dark:text-teal-400">
                     <Rows3 className="size-4" />
                     <span className="text-xs font-medium uppercase tracking-wider">Rows</span>
@@ -580,7 +580,7 @@ export default function DataUpload() {
                     {dataset.rows.length.toLocaleString()}
                   </p>
                 </div>
-                <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-orange-50 p-4 dark:from-amber-950/30 dark:to-orange-950/30">
+                <div className="rounded-xl border bg-gradient-to-br from-amber-50 to-orange-50 p-4 dark:from-amber-950/30 dark:to-orange-950/30 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                     <Columns3 className="size-4" />
                     <span className="text-xs font-medium uppercase tracking-wider">Columns</span>
@@ -589,7 +589,7 @@ export default function DataUpload() {
                     {dataset.headers.length}
                   </p>
                 </div>
-                <div className="rounded-lg border bg-gradient-to-br from-rose-50 to-pink-50 p-4 dark:from-rose-950/30 dark:to-pink-950/30">
+                <div className="rounded-xl border bg-gradient-to-br from-rose-50 to-pink-50 p-4 dark:from-rose-950/30 dark:to-pink-950/30 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
                     <Database className="size-4" />
                     <span className="text-xs font-medium uppercase tracking-wider">Status</span>
@@ -630,6 +630,7 @@ export default function DataUpload() {
           </Card>
 
           {/* Data Quality Score & Quick Stats Row */}
+          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-2" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Data Quality Score Card */}
             {qualityScore && (
@@ -831,7 +832,7 @@ export default function DataUpload() {
                           {rowIdx + 1}
                         </TableCell>
                         {row.map((cell, cellIdx) => (
-                          <TableCell key={cellIdx} className="text-sm whitespace-nowrap">
+                          <TableCell key={cellIdx} className="text-xs font-mono whitespace-nowrap">
                             {cell === null || cell === undefined ? (
                               <span className="text-muted-foreground/50 italic">null</span>
                             ) : (

@@ -379,7 +379,7 @@ function ProbabilityCalculator({ onFillFromRef }: { onFillFromRef?: (dist: CalcD
               <button
                 key={d.key}
                 onClick={() => handleDistChange(d.key)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg min-w-[80px] text-sm font-medium transition-all duration-200 border ${
                   distType === d.key
                     ? d.category === 'continuous'
                       ? 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700 shadow-sm'
@@ -766,7 +766,7 @@ function ParamSlider({
   step: number; onChange: (v: number) => void; symbol?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-medium">
           {symbol ? `${symbol} ` : ''}{label}

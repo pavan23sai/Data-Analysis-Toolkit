@@ -1006,7 +1006,7 @@ export default function NonParametricTests() {
   if (!dataset) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="size-5 text-teal-600 shrink-0" />
             Non-parametric Tests
@@ -1045,7 +1045,7 @@ export default function NonParametricTests() {
       </Card>
 
       {/* Test Selection Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {testCards.map((test) => {
           const isActive = activeTest === test.id
           const badge = testCardBadges[test.id]
@@ -1057,7 +1057,7 @@ export default function NonParametricTests() {
                 setResults([])
                 setError(null)
               }}
-              className={`text-left rounded-xl border p-4 transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 ${
+              className={`text-left rounded-xl border p-4 min-h-[120px] transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 ${
                 isActive
                   ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/30 ring-2 ring-teal-500/20 shadow-sm'
                   : 'border-border bg-card hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-sm'
@@ -1067,7 +1067,7 @@ export default function NonParametricTests() {
                 <span className={test.color}>{test.icon}</span>
                 <span className="font-semibold text-sm">{test.title}</span>
               </div>
-              <p className="text-xs text-muted-foreground mb-2">{test.description}</p>
+              <p className="text-xs text-muted-foreground mb-1">{test.description}</p>
               <div className="flex flex-col gap-1.5">
                 <Badge
                   variant="outline"
@@ -1147,7 +1147,7 @@ export default function NonParametricTests() {
           <div className="flex justify-end pt-2">
             <Button
               onClick={runTest}
-              className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl"
+              className="gap-2 px-6 py-2.5 rounded-xl font-semibold bg-teal-600 hover:bg-teal-700 text-white"
             >
               <Play className="size-4 shrink-0" />
               Run Test
@@ -1196,13 +1196,13 @@ export default function NonParametricTests() {
                 <TableBody>
                   {adjustedResults.map((result, idx) => (
                     <TableRow key={idx} className="transition-colors hover:bg-muted/50">
-                      <TableCell className="font-medium truncate max-w-[200px]">{result.testName}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="py-3 font-medium truncate max-w-[200px]">{result.testName}</TableCell>
+                      <TableCell className="py-3 text-center">
                         <span className="font-mono text-sm">
                           {result.statisticLabel} = {result.statistic}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="py-3 text-center">
                         <Badge
                           variant={result.significant ? 'destructive' : 'secondary'}
                           className="font-mono text-xs"
@@ -1210,14 +1210,14 @@ export default function NonParametricTests() {
                           {result.pValue}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="py-3 text-center">
                         {result.df !== undefined ? (
                           <span className="font-mono text-sm">{result.df}</span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="py-3 text-center">
                         {result.effectSizeValue !== undefined && result.effectSizeLabel && result.effectSizeInterpretation ? (
                           <EffectSizeBadge
                             value={result.effectSizeValue}
@@ -1228,7 +1228,7 @@ export default function NonParametricTests() {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-3">
                         <div className="flex items-start gap-2">
                           {result.significant ? (
                             <XCircle className="size-4 text-red-500 mt-0.5 shrink-0" />

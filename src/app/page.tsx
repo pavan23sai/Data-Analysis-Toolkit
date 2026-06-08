@@ -35,6 +35,7 @@ import {
   ArrowUp,
   Sparkles,
 } from 'lucide-react';
+import StatisticalGlossary from '@/components/StatisticalGlossary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -130,10 +131,10 @@ function AnimatedStatCard({
           <Icon className="w-5 h-5 text-white" />
         </div>
         <div>
-          <div className="text-2xl font-bold tabular-nums tracking-tight text-slate-800 dark:text-slate-100">
+          <div className="text-2xl font-bold tabular-nums tracking-tight text-slate-800 dark:text-white">
             {count.toLocaleString()}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">{label}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-300 font-medium">{label}</div>
         </div>
       </div>
     </div>
@@ -572,7 +573,7 @@ export default function Home() {
                 </div>
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Data Analysis Toolkit</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-300 leading-relaxed">
                 A comprehensive statistical analysis toolkit for data exploration, hypothesis testing, and probability distributions.
               </p>
             </div>
@@ -636,6 +637,9 @@ export default function Home() {
       >
         <ArrowUp className="w-5 h-5" />
       </button>
+
+      {/* Statistical Glossary Floating Button & Dialog */}
+      <StatisticalGlossary />
     </div>
   );
 }

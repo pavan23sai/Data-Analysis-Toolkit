@@ -143,6 +143,16 @@
   }
 }
 
+/* Shimmer animation for footer gradient border */
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Custom scrollbar-hide utility */
 .scrollbar-hide {
   -ms-overflow-style: none;

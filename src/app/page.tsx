@@ -32,6 +32,8 @@ import {
   Hash,
   Tag,
   Info,
+  ArrowUp,
+  Sparkles,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -159,6 +161,8 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('upload');
   const [fadeKey, setFadeKey] = useState(0);
   const [isFading, setIsFading] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const dataset = useDataset(s => s.dataset);
   const { getNumericColumns, getColumnData, getCategoricalColumns } = useDataset();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -263,6 +267,25 @@ export default function Home() {
     }, 150);
   }, [activeSection]);
 
+  // Scroll listener for back-to-top button and scroll progress
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setShowBackToTop(scrollY > 400);
+
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollY / docHeight) * 100 : 0;
+      setScrollProgress(Math.min(progress, 100));
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleScrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   // Keyboard shortcuts: Alt+1 through Alt+8
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -347,12 +370,29 @@ export default function Home() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => {
+                  handleSectionChange('exploration');
+                  setTimeout(() => {
+                    const el = document.getElementById('ai-insights-card');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 300);
+                }}
+                disabled={!dataset}
+                className="gap-1.5 text-teal-700 border-teal-300 hover:bg-teal-50 hover:scale-105 hover:shadow-md active:scale-95 dark:text-teal-300 dark:border-teal-700 dark:hover:bg-teal-950/50 disabled:opacity-40 disabled:cursor-not-allowed shrink-0 transition-all duration-200"
+                aria-label="AI Insights"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">AI Insights</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleExportAll}
                 disabled={!dataset}
-                className="gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-300 dark:border-emerald-700 dark:hover:bg-emerald-950/50 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                className="gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50 hover:scale-105 hover:shadow-md active:scale-95 dark:text-emerald-300 dark:border-emerald-700 dark:hover:bg-emerald-950/50 disabled:opacity-40 disabled:cursor-not-allowed shrink-0 transition-all duration-200"
                 aria-label="Export all results"
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4 transition-transform duration-200 group-hover:animate-bounce" />
                 <span className="hidden sm:inline">Export All</span>
               </Button>
               <ThemeToggle />
@@ -506,26 +546,30 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Content with fade animation */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+      {/* Main Content with fade animation and gradient background */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 relative">
+        {/* Subtle gradient background behind active tab content */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-50/30 via-transparent to-emerald-50/20 dark:from-teal-950/10 dark:via-transparent dark:to-emerald-950/10 pointer-events-none" />
         <div
           ref={contentRef}
-          className={`transition-opacity duration-150 ${isFading ? 'opacity-0' : 'opacity-100'}`}
+          className={`relative transition-opacity duration-150 ${isFading ? 'opacity-0' : 'opacity-100'}`}
         >
           {renderSection()}
         </div>
       </main>
 
       {/* Enhanced Footer */}
-      <footer className="mt-auto bg-white dark:bg-slate-900 relative">
-        {/* Gradient top border */}
-        <div className="h-[2px] bg-gradient-to-r from-teal-500/40 via-emerald-500/40 to-teal-500/40" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8">
+      <footer className="mt-auto bg-white dark:bg-slate-900 relative overflow-hidden">
+        {/* Animated gradient top border */}
+        <div className="h-[2px] bg-gradient-to-r from-teal-500/40 via-emerald-500/60 to-teal-500/40 animate-[shimmer_3s_ease-in-out_infinite]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-8">
             {/* Left column - Project info */}
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
+                  <BookOpen className="w-3.5 h-3.5 text-white" />
+                </div>
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Data Analysis Toolkit</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -534,26 +578,26 @@ export default function Home() {
             </div>
 
             {/* Center column - Tech stack */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">Tech Stack</span>
               <div className="flex flex-wrap gap-1.5">
-                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-teal-400 hover:text-teal-600 dark:hover:border-teal-600 dark:hover:text-teal-400 hover:shadow-sm transition-all duration-200 cursor-default">
                   Next.js
                 </Badge>
-                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:border-emerald-600 dark:hover:text-emerald-400 hover:shadow-sm transition-all duration-200 cursor-default">
                   React
                 </Badge>
-                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-amber-400 hover:text-amber-600 dark:hover:border-amber-600 dark:hover:text-amber-400 hover:shadow-sm transition-all duration-200 cursor-default">
                   shadcn/ui
                 </Badge>
-                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                <Badge variant="outline" className="h-6 px-2 text-[10px] font-mono border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-rose-400 hover:text-rose-600 dark:hover:border-rose-600 dark:hover:text-rose-400 hover:shadow-sm transition-all duration-200 cursor-default">
                   Recharts
                 </Badge>
               </div>
             </div>
 
             {/* Right column - Quick links */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">Quick Links</span>
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <Keyboard className="w-3.5 h-3.5" />
@@ -562,7 +606,7 @@ export default function Home() {
             </div>
           </div>
 
-          <Separator className="my-4 bg-slate-200/60 dark:bg-slate-700/60" />
+          <Separator className="my-5 bg-slate-200/60 dark:bg-slate-700/60" />
 
           <div className="flex items-center justify-center">
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
@@ -571,6 +615,27 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Scroll Progress Indicator */}
+      <div className="fixed top-0 left-0 right-0 z-[60] h-1 pointer-events-none">
+        <div
+          className="h-full bg-gradient-to-r from-teal-500 via-emerald-400 to-teal-500 transition-all duration-150 ease-out"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
+      {/* Back to Top Floating Button */}
+      <button
+        onClick={handleScrollToTop}
+        aria-label="Back to top"
+        className={`fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/30 flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:shadow-teal-500/40 hover:scale-110 active:scale-95 ${
+          showBackToTop
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+      >
+        <ArrowUp className="w-5 h-5" />
+      </button>
     </div>
   );
 }

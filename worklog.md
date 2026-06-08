@@ -589,3 +589,91 @@ Stage Summary:
 - Visual polish: gradient card headers, gradient chart backgrounds, improved tooltips, rounded bar charts, section headers with icons, fade transitions
 - All features responsive and dark-mode compatible
 - Zero lint errors, clean compilation
+
+---
+Task ID: 11-b
+Agent: Non-Parametric Tests Enhancement Agent
+Task: Enhance NonParametricTests.tsx with effect sizes, visual enhancements, comparison charts, and interactive alpha
+
+Work Log:
+- Read worklog.md and existing NonParametricTests.tsx (851 lines), ParametricTests.tsx (for PValueGauge, effect size, chart patterns), statistics.ts (for median, standardDeviation functions)
+- Added new imports from statistics.ts: median, standardDeviation
+- Added Recharts imports: BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, Cell, ErrorBar
+- Added Lucide imports: Ruler, Lightbulb, ShieldCheck, Gauge
+- Added useMemo import from React
+
+Feature 1 - Effect Size Indicators:
+- Created computeRankBiserialMW: r = 1 - (2U / (n1*n2)) for Mann-Whitney U
+- Created computeMatchedRankBiserialWilcoxon: r = Z / sqrt(N) for Wilcoxon
+- Created computeEpsilonSquared: ε² = (H - k + 1) / (n - k) for Kruskal-Wallis
+- Created computeKendallsW: W = χ² / (n*(k-1)) for Friedman
+- Created interpretEffectSizeR: Negligible (|r|<0.1, slate), Small (0.1-0.3, amber), Medium (0.3-0.5, orange), Large (>0.5, rose)
+- Created interpretEffectSizeEpsilon: Negligible (|ε²|<0.01, slate), Small (0.01-0.06, amber), Medium (0.06-0.14, orange), Large (>0.14, rose)
+- Created interpretKendallsW: Same thresholds as r interpretation
+- Created EffectSizeBadge component displaying value + label + interpretation
+- Added effect size data to TestResult interface (effectSizeValue, effectSizeLabel, effectSizeInterpretation, effectSizeText)
+- Each test computes its effect size on run and stores in results state
+- Added effect size column to results table
+- Added detailed effect size section below table with threshold reference cards (4 color-coded boxes showing thresholds)
+
+Feature 2 - P-Value Gauge:
+- Created PValueGauge SVG component (semi-circular gauge) matching ParametricTests pattern
+- Green zone (not significant) and red zone (significant) with alpha threshold dashed line
+- Needle pointing to p-value position on the arc
+- Center dot, labels ("Not Sig." / "Sig."), p-value text below
+- Added to test results card header alongside result badge
+- Gauge dynamically uses the current alpha value for threshold line
+
+Feature 3 - Comparison Bar Charts:
+- For Mann-Whitney (both columns and groups mode): bar chart with median ± 1 SD error bars for each group
+  - Teal (#14b8a6) for group 1, amber (#f59e0b) for group 2
+  - Overall median reference line (dashed gray)
+- For Kruskal-Wallis: bar chart with median ± 1 SD error bars for each group
+  - Uses GROUP_COLORS palette (8 colors: teal, amber, violet, rose, cyan, lime, pink, indigo)
+  - Overall median reference line (dashed gray)
+- Charts use Recharts BarChart with Cell for per-bar colors and ErrorBar for error bars
+- Chart data computed in run callbacks and stored in result state (chartData, overallMedian)
+
+Feature 4 - Interactive Significance Level Selector:
+- Added alpha state (useState, default 0.05)
+- 3 toggle buttons for α = 0.01, 0.05, 0.10
+- Active button: teal bg with shadow-sm, Inactive: outline variant
+- Context label: "Very strict criterion" / "Standard criterion" / "Lenient criterion"
+- α badge displayed with Gauge icon and mono font
+- Added adjustedResults useMemo that recalculates significance based on current alpha
+- All result displays use adjustedResults instead of raw results
+- Changing alpha instantly updates significance decisions, PValueGauge threshold, result badges, and interpretation summary
+
+Feature 5 - Test Interpretation Summary Card:
+- Created TestInterpretationSummary component
+- Visual accent bar at top (gradient: emerald/teal for not significant, rose for significant)
+- Colored background panel with "Significant" or "Not Significant" conclusion (XCircle/CheckCircle2 icon)
+- Shows p-value vs alpha comparison text
+- Effect size interpretation text (with Ruler icon)
+- Recommendation text (with Lightbulb icon): actionable advice for significant and non-significant results
+- Border color matches conclusion (emerald or rose)
+
+Feature 6 - Visual Polish:
+- Table rows: added transition-colors hover:bg-muted/50
+- Added GradientDivider component (h-px bg-gradient-to-r from-transparent via-border to-transparent)
+- Used gradient dividers between sections in results card
+- Test selection cards: added hover:shadow-md hover:-translate-y-0.5 transition-all
+- Added effect size category badge to test selection cards (with Ruler icon)
+- Test configuration card and other cards: added transition-shadow hover:shadow-md
+- "Run Test" button: added rounded-xl for more rounded corners
+- When to Use guide cards: added transition-colors hover:bg-muted/30
+- Result badge in header: colored significance badge (emerald/rose)
+
+- All existing functionality preserved; all new features are additive
+- Lint passes cleanly with no errors
+- Dev server compiles successfully
+
+Stage Summary:
+- Effect size indicators with interpretation badges for all 4 tests (rank-biserial r, matched rank-biserial r, epsilon squared, Kendall's W)
+- PValueGauge SVG semi-circular gauge added to test results header
+- Comparison bar charts with median ± SD error bars for Mann-Whitney and Kruskal-Wallis
+- Interactive alpha selector (α = 0.01, 0.05, 0.10) with dynamic significance recalculation
+- Test Interpretation Summary Card with conclusion, effect size, and recommendations
+- Visual polish: hover effects, gradient dividers, test card badges, rounded button corners
+- All features responsive and dark-mode compatible
+- Zero lint errors, clean compilation

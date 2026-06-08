@@ -1,38 +1,32 @@
 ---
 Task ID: 1
-Agent: Main Developer
-Task: Build complete Data Analysis Toolkit
+Agent: Main Agent
+Task: Fix overlapping data issues and add dark mode support
 
 Work Log:
-- Installed papaparse for CSV parsing
-- Created comprehensive statistics library (/src/lib/statistics.ts) with:
-  - Basic stats: mean, median, mode, variance, SD, IQR, quartiles, skewness, kurtosis
-  - Missing value analysis, duplicate detection, outlier detection (IQR)
-  - Normal distribution helpers: PDF, CDF, inverse CDF, erf, gamma, beta functions
-  - Normality tests: Shapiro-Wilk, Kolmogorov-Smirnov, Anderson-Darling
-  - Hypothesis tests: T-test (1-sample, 2-sample, paired), Z-test, Chi-square GoF, ANOVA, Levene's
-  - Non-parametric tests: Mann-Whitney U, Wilcoxon, Kruskal-Wallis, Friedman
-  - Q-Q plot data, fitted normal curve, CLT simulation, empirical rule
-- Created probability distributions library (/src/lib/distributions.ts) with:
-  - Discrete: Binomial, Bernoulli, Poisson (PMF + CDF)
-  - Continuous: Normal, Exponential, Uniform (PDF + CDF)
-  - Empirical rule visualization data
-  - Distribution comparison utilities
-- Created Zustand store for dataset management (/src/hooks/useDataset.ts)
-- Built 7 section components via subagents:
-  - DataUpload: CSV upload, sample data, export, preview table
-  - DataExploration: Missing values, duplicates, cleaning, outlier detection
-  - DescriptiveStatistics: Summary table, histogram, boxplot, categorical charts
-  - ProbabilityDistributions: Interactive sliders for all 6 distributions, empirical rule, comparison
-  - NormalityTesting: 3 tests with p-value tables, Q-Q plot, histogram with fitted curve
-  - ZScoreCLT: Z-score calculator with visualization, CLT simulation
-  - ParametricTests: T-test, Z-test, Chi-square GoF, ANOVA + Levene's
-  - NonParametricTests: Mann-Whitney, Wilcoxon, Kruskal-Wallis, Friedman
-- Built main page with tab navigation, header, and footer
-- Tested with agent-browser: all sections working correctly
+- Analyzed uploaded screenshot using VLM to identify overlapping issues in DataExploration component
+- Verified all 8 component files exist on disk
+- Added ThemeProvider from next-themes to layout.tsx with attribute="class", defaultTheme="system", enableSystem
+- Added dark mode toggle button (Sun/Moon icon) to header in page.tsx
+- Rewrote DataExploration.tsx to fix overlapping issues:
+  - Moved Badge elements out of CardDescription to prevent text overlap
+  - Added whitespace-nowrap to all table cells
+  - Wrapped tables in bordered containers with proper overflow handling
+  - Added proper spacing between sections with dividers
+  - Added comprehensive dark mode classes throughout
+- Updated page.tsx with full dark mode support (header, nav, footer, badges)
+- Delegated dark mode updates to 3 subagents:
+  - DescriptiveStatistics.tsx: Updated SVG colors, Recharts tooltips, axis labels for dark mode
+  - NormalityTesting.tsx: Updated all Badge variants, Card borders, bg-muted/50 areas
+  - ProbabilityDistributions.tsx: Updated all 15 Recharts tooltips, info boxes, stats display
+- Other components already had dark mode classes (DataUpload, ZScoreCLT, ParametricTests, NonParametricTests)
+- Ran lint - no errors
+- Tested in browser: Data Upload, Data Exploration, Descriptive Statistics, Probability Distributions all working
+- Dark mode toggle verified working - switches between light and dark themes
+- No overlapping elements detected in Data Exploration section
 
 Stage Summary:
-- Complete Data Analysis Toolkit with 8 sections covering all required topics
-- All sections verified working via browser testing
-- No runtime errors in dev server logs
-- Sample dataset with 30 student records for demonstration
+- Overlapping data issue fixed by restructuring DataExploration component layout
+- Dark mode fully implemented with next-themes ThemeProvider, toggle button in header
+- All 8 components now support dark mode with appropriate color variants
+- App renders cleanly with no build or runtime errors

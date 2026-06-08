@@ -208,26 +208,6 @@ export default function DataExploration() {
     };
   }, [selectedOutlierCol, getColumnData]);
 
-  // Boxplot data: use BarChart to simulate a boxplot with 5-number summary
-  const boxplotData = useMemo(() => {
-    if (!outlierResult) return [];
-    const { min: dataMin, q1, q2, q3, max: dataMax, lowerBound, upperBound } = outlierResult;
-    // We create segments that when stacked form the boxplot
-    return [
-      {
-        name: 'Boxplot',
-        // Segments from bottom to top
-        whiskerLow: Math.max(dataMin, lowerBound) - Math.min(dataMin, lowerBound) > 0
-          ? Math.max(dataMin, lowerBound) - dataMin
-          : 0,
-        q1Segment: q1 - Math.max(dataMin, lowerBound),
-        median: q2 - q1,
-        q3Segment: q3 - q2,
-        whiskerHigh: dataMax - q3,
-      },
-    ];
-  }, [outlierResult]);
-
   // Better approach: 5-number summary as individual bars for visualization
   const fiveNumberData = useMemo(() => {
     if (!outlierResult) return [];
@@ -259,72 +239,76 @@ export default function DataExploration() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Search className="size-5 text-emerald-600" />
+            <Search className="size-5 text-emerald-600 dark:text-emerald-400" />
             <CardTitle className="text-lg">Missing Value Analysis</CardTitle>
           </div>
-          <CardDescription>
-            Overview of missing data across all columns
+          <div className="flex items-center gap-2 mt-1">
+            <CardDescription>
+              Overview of missing data across all columns
+            </CardDescription>
             {totalMissing > 0 && (
-              <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-800 border-amber-200">
+              <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800">
                 {totalMissing} missing total
               </Badge>
             )}
             {totalMissing === 0 && (
-              <Badge variant="secondary" className="ml-2 bg-emerald-100 text-emerald-800 border-emerald-200">
+              <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
                 No missing values
               </Badge>
             )}
-          </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="max-h-80">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Column</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Missing</TableHead>
-                  <TableHead className="text-right">Missing %</TableHead>
-                  <TableHead className="text-right">Present</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {missingAnalysis.map((col) => (
-                  <TableRow key={col.column}>
-                    <TableCell className="font-medium">{col.column}</TableCell>
-                    <TableCell className="text-right">{col.totalCount}</TableCell>
-                    <TableCell className="text-right">
-                      {col.missingCount > 0 ? (
-                        <span className="text-amber-600 font-medium">{col.missingCount}</span>
-                      ) : (
-                        <span>{col.missingCount}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {col.missingPercent > 0 ? (
-                        <span className="text-amber-600 font-medium">
-                          {col.missingPercent.toFixed(1)}%
-                        </span>
-                      ) : (
-                        <span>0%</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{col.presentCount}</TableCell>
-                    <TableCell className="text-center">
-                      {col.missingCount === 0 ? (
-                        <CheckCircle2 className="size-4 text-emerald-500 inline-block" />
-                      ) : col.missingPercent > 30 ? (
-                        <XCircle className="size-4 text-red-500 inline-block" />
-                      ) : (
-                        <AlertTriangle className="size-4 text-amber-500 inline-block" />
-                      )}
-                    </TableCell>
+          <div className="rounded-lg border dark:border-slate-700 overflow-hidden">
+            <ScrollArea className="max-h-80">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 dark:bg-slate-800/50">
+                    <TableHead className="whitespace-nowrap">Column</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Total</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Missing</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Missing %</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Present</TableHead>
+                    <TableHead className="text-center whitespace-nowrap">Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+                </TableHeader>
+                <TableBody>
+                  {missingAnalysis.map((col) => (
+                    <TableRow key={col.column}>
+                      <TableCell className="font-medium whitespace-nowrap">{col.column}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">{col.totalCount}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        {col.missingCount > 0 ? (
+                          <span className="text-amber-600 dark:text-amber-400 font-medium">{col.missingCount}</span>
+                        ) : (
+                          <span>{col.missingCount}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        {col.missingPercent > 0 ? (
+                          <span className="text-amber-600 dark:text-amber-400 font-medium">
+                            {col.missingPercent.toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span>0%</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">{col.presentCount}</TableCell>
+                      <TableCell className="text-center whitespace-nowrap">
+                        {col.missingCount === 0 ? (
+                          <CheckCircle2 className="size-4 text-emerald-500 inline-block" />
+                        ) : col.missingPercent > 30 ? (
+                          <XCircle className="size-4 text-red-500 inline-block" />
+                        ) : (
+                          <AlertTriangle className="size-4 text-amber-500 inline-block" />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          </div>
         </CardContent>
       </Card>
 
@@ -332,7 +316,7 @@ export default function DataExploration() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Copy className="size-5 text-emerald-600" />
+            <Copy className="size-5 text-emerald-600 dark:text-emerald-400" />
             <CardTitle className="text-lg">Duplicate Analysis</CardTitle>
           </div>
           <CardDescription>
@@ -342,20 +326,20 @@ export default function DataExploration() {
         <CardContent>
           {duplicateResult && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-lg border bg-muted/30 p-4 text-center">
+              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-4 text-center">
                 <p className="text-2xl font-bold text-foreground">
                   {dataset.rows.length}
                 </p>
                 <p className="text-sm text-muted-foreground">Total Rows</p>
               </div>
-              <div className="rounded-lg border bg-muted/30 p-4 text-center">
-                <p className="text-2xl font-bold text-amber-600">
+              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-4 text-center">
+                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                   {duplicateResult.duplicateCount}
                 </p>
                 <p className="text-sm text-muted-foreground">Duplicate Rows</p>
               </div>
-              <div className="rounded-lg border bg-muted/30 p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-600">
+              <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-4 text-center">
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {duplicateResult.uniqueCount}
                 </p>
                 <p className="text-sm text-muted-foreground">Unique Rows</p>
@@ -369,7 +353,7 @@ export default function DataExploration() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Droplets className="size-5 text-emerald-600" />
+            <Droplets className="size-5 text-emerald-600 dark:text-emerald-400" />
             <CardTitle className="text-lg">Data Cleaning</CardTitle>
           </div>
           <CardDescription>
@@ -377,10 +361,11 @@ export default function DataExploration() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Missing Value Handling */}
-            <div>
-              <h4 className="text-sm font-medium mb-2 text-muted-foreground">
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <AlertTriangle className="size-4 text-amber-500" />
                 Handle Missing Values
               </h4>
               <div className="flex flex-wrap gap-2">
@@ -389,7 +374,7 @@ export default function DataExploration() {
                   size="sm"
                   onClick={handleDropMissingRows}
                   disabled={totalMissing === 0}
-                  className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                  className="border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-800"
                 >
                   <Trash2 className="size-3.5 mr-1" />
                   Drop Rows with Missing
@@ -399,7 +384,7 @@ export default function DataExploration() {
                   size="sm"
                   onClick={() => handleFillMissing('mean')}
                   disabled={totalMissing === 0}
-                  className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800"
                 >
                   Fill with Mean
                 </Button>
@@ -408,7 +393,7 @@ export default function DataExploration() {
                   size="sm"
                   onClick={() => handleFillMissing('median')}
                   disabled={totalMissing === 0}
-                  className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800"
                 >
                   Fill with Median
                 </Button>
@@ -417,16 +402,19 @@ export default function DataExploration() {
                   size="sm"
                   onClick={() => handleFillMissing('mode')}
                   disabled={totalMissing === 0}
-                  className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-800"
                 >
                   Fill with Mode
                 </Button>
               </div>
             </div>
 
+            <div className="border-t dark:border-slate-700" />
+
             {/* Duplicate Handling */}
-            <div>
-              <h4 className="text-sm font-medium mb-2 text-muted-foreground">
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Copy className="size-4 text-amber-500" />
                 Handle Duplicates
               </h4>
               <Button
@@ -434,7 +422,7 @@ export default function DataExploration() {
                 size="sm"
                 onClick={handleRemoveDuplicates}
                 disabled={!duplicateResult || duplicateResult.duplicateCount === 0}
-                className="border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                className="border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-800"
               >
                 <Trash2 className="size-3.5 mr-1" />
                 Remove Duplicate Rows
@@ -443,7 +431,7 @@ export default function DataExploration() {
 
             {/* Cleaning Message */}
             {cleaningMessage && (
-              <div className="flex items-center gap-2 rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-800">
+              <div className="flex items-center gap-2 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-300">
                 <CheckCircle2 className="size-4 shrink-0" />
                 {cleaningMessage}
               </div>
@@ -456,7 +444,7 @@ export default function DataExploration() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <BarChart3 className="size-5 text-emerald-600" />
+            <BarChart3 className="size-5 text-emerald-600 dark:text-emerald-400" />
             <CardTitle className="text-lg">Outlier Detection (IQR)</CardTitle>
           </div>
           <CardDescription>
@@ -491,35 +479,35 @@ export default function DataExploration() {
               <>
                 {/* IQR Summary */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="rounded-lg border bg-muted/30 p-3">
+                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3">
                     <p className="text-xs text-muted-foreground mb-1">Lower Bound</p>
-                    <p className="text-lg font-bold text-amber-600">
+                    <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
                       {outlierResult.lowerBound.toFixed(2)}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-muted/30 p-3">
+                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3">
                     <p className="text-xs text-muted-foreground mb-1">Upper Bound</p>
-                    <p className="text-lg font-bold text-amber-600">
+                    <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
                       {outlierResult.upperBound.toFixed(2)}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-muted/30 p-3">
+                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3">
                     <p className="text-xs text-muted-foreground mb-1">IQR</p>
                     <p className="text-lg font-bold text-foreground">
                       {(outlierResult.q3 - outlierResult.q1).toFixed(2)}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-muted/30 p-3">
+                  <div className="rounded-lg border dark:border-slate-700 bg-muted/30 dark:bg-slate-800/50 p-3">
                     <p className="text-xs text-muted-foreground mb-1">Outliers Found</p>
-                    <p className={`text-lg font-bold ${outlierResult.outliers.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    <p className={`text-lg font-bold ${outlierResult.outliers.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                       {outlierResult.outliers.length}
                     </p>
                   </div>
                 </div>
 
                 {/* Five-Number Summary */}
-                <div className="rounded-lg border p-4">
-                  <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-1.5">
+                <div className="rounded-lg border dark:border-slate-700 p-4">
+                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
                     <TableProperties className="size-4" />
                     Five-Number Summary
                   </h4>
@@ -535,7 +523,7 @@ export default function DataExploration() {
                     </div>
                     <ArrowUp className="size-3 text-muted-foreground rotate-90" />
                     <div className="text-center">
-                      <p className="font-bold text-emerald-600">{outlierResult.q2.toFixed(2)}</p>
+                      <p className="font-bold text-emerald-600 dark:text-emerald-400">{outlierResult.q2.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">Median</p>
                     </div>
                     <ArrowUp className="size-3 text-muted-foreground rotate-90" />
@@ -552,8 +540,8 @@ export default function DataExploration() {
                 </div>
 
                 {/* Boxplot Visualization using BarChart */}
-                <div className="rounded-lg border p-4">
-                  <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-1.5">
+                <div className="rounded-lg border dark:border-slate-700 p-4">
+                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
                     <BarChart3 className="size-4" />
                     Boxplot Visualization
                   </h4>
@@ -563,7 +551,7 @@ export default function DataExploration() {
                       margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
                       layout="vertical"
                     >
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} className="opacity-30" />
                       <XAxis type="number" tick={{ fontSize: 11 }} />
                       <YAxis
                         type="category"
@@ -577,6 +565,8 @@ export default function DataExploration() {
                           borderRadius: '8px',
                           fontSize: '12px',
                           border: '1px solid hsl(var(--border))',
+                          backgroundColor: 'hsl(var(--card))',
+                          color: 'hsl(var(--card-foreground))',
                         }}
                       />
                       <Bar dataKey="value" radius={[4, 4, 4, 4]} barSize={36}>
@@ -638,8 +628,8 @@ export default function DataExploration() {
 
                 {/* Outlier Values List */}
                 {outlierResult.outliers.length > 0 && (
-                  <div className="rounded-lg border border-red-200 bg-red-50/50 p-4">
-                    <h4 className="text-sm font-medium text-red-800 mb-2 flex items-center gap-1.5">
+                  <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                    <h4 className="text-sm font-semibold text-red-800 dark:text-red-400 mb-2 flex items-center gap-1.5">
                       <AlertTriangle className="size-4" />
                       Outlier Values ({outlierResult.outliers.length} detected)
                     </h4>
@@ -649,7 +639,7 @@ export default function DataExploration() {
                           <Badge
                             key={idx}
                             variant="outline"
-                            className="border-red-300 text-red-700 bg-red-50"
+                            className="border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30"
                           >
                             Row {outlierResult.indices[idx] + 1}: {typeof val === 'number' ? val.toFixed(4) : val}
                           </Badge>
@@ -660,7 +650,7 @@ export default function DataExploration() {
                 )}
 
                 {outlierResult.outliers.length === 0 && (
-                  <div className="flex items-center gap-2 rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-800">
+                  <div className="flex items-center gap-2 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-300">
                     <CheckCircle2 className="size-4 shrink-0" />
                     No outliers detected in this column.
                   </div>
@@ -669,14 +659,14 @@ export default function DataExploration() {
             )}
 
             {!selectedOutlierCol && numericCols.length > 0 && (
-              <div className="flex items-center gap-2 rounded-md bg-muted/50 border px-3 py-4 text-sm text-muted-foreground justify-center">
+              <div className="flex items-center gap-2 rounded-md bg-muted/50 dark:bg-slate-800/50 border dark:border-slate-700 px-3 py-4 text-sm text-muted-foreground justify-center">
                 <Info className="size-4 shrink-0" />
                 Select a numeric column to detect outliers
               </div>
             )}
 
             {numericCols.length === 0 && (
-              <div className="flex items-center gap-2 rounded-md bg-muted/50 border px-3 py-4 text-sm text-muted-foreground justify-center">
+              <div className="flex items-center gap-2 rounded-md bg-muted/50 dark:bg-slate-800/50 border dark:border-slate-700 px-3 py-4 text-sm text-muted-foreground justify-center">
                 <Info className="size-4 shrink-0" />
                 No numeric columns available for outlier detection
               </div>

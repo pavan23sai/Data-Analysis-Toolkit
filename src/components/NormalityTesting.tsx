@@ -247,7 +247,7 @@ export default function NormalityTesting() {
               </SelectContent>
             </Select>
             {selectedColumn && columnData.length > 0 && (
-              <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-200">
+              <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800">
                 {columnData.length} values
               </Badge>
             )}
@@ -268,10 +268,10 @@ export default function NormalityTesting() {
       )}
 
       {selectedColumn && columnData.length < 3 && (
-        <Card className="border-amber-200 bg-amber-50/50">
+        <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-900/20">
           <CardContent className="flex items-center gap-3 py-4">
-            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-            <p className="text-sm text-amber-800">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <p className="text-sm text-amber-800 dark:text-amber-200">
               Insufficient data points ({columnData.length}) for normality testing.
               At least 3 values are required.
             </p>
@@ -314,15 +314,15 @@ export default function NormalityTesting() {
                       </TableCell>
                       <TableCell className="text-center">
                         {row.reject === null ? (
-                          <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">
+                          <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800">
                             Inconclusive
                           </Badge>
                         ) : row.reject ? (
-                          <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
+                          <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/50">
                             Reject H₀
                           </Badge>
                         ) : (
-                          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
+                          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-900/50">
                             Fail to Reject H₀
                           </Badge>
                         )}
@@ -350,13 +350,13 @@ export default function NormalityTesting() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground mb-1">W Statistic</p>
                       <p className="text-lg font-semibold font-mono">
                         {isNaN(shapiroWilkResult.statistic) ? 'N/A' : shapiroWilkResult.statistic.toFixed(4)}
                       </p>
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
                       <p className="text-lg font-semibold font-mono">
                         {isNaN(shapiroWilkResult.pValue) ? 'N/A' : shapiroWilkResult.pValue.toFixed(4)}
@@ -384,13 +384,13 @@ export default function NormalityTesting() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground mb-1">D Statistic</p>
                       <p className="text-lg font-semibold font-mono">
                         {isNaN(ksResult.statistic) ? 'N/A' : ksResult.statistic.toFixed(4)}
                       </p>
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
                       <p className="text-lg font-semibold font-mono">
                         {isNaN(ksResult.pValue) ? 'N/A' : ksResult.pValue.toFixed(4)}
@@ -418,13 +418,13 @@ export default function NormalityTesting() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground mb-1">A² Statistic</p>
                       <p className="text-lg font-semibold font-mono">
                         {isNaN(adResult.statistic) ? 'N/A' : adResult.statistic.toFixed(4)}
                       </p>
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 dark:bg-slate-800/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground mb-1">P-value</p>
                       <p className="text-lg font-semibold font-mono">
                         {isNaN(adResult.pValue) ? 'N/A' : adResult.pValue.toFixed(4)}
@@ -456,11 +456,11 @@ export default function NormalityTesting() {
                                 </TableCell>
                                 <TableCell className="text-xs py-1 text-center">
                                   {exceeds ? (
-                                    <Badge className="bg-red-50 text-red-700 border-red-200 text-[10px] px-1.5 py-0">
+                                    <Badge className="bg-red-50 text-red-700 border-red-200 text-[10px] px-1.5 py-0 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
                                       Reject
                                     </Badge>
                                   ) : (
-                                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1.5 py-0">
+                                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1.5 py-0 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800">
                                       Fail to Reject
                                     </Badge>
                                   )}

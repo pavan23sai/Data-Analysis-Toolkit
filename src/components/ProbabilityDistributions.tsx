@@ -63,7 +63,7 @@ function ParamSlider({
         <Label className="text-sm font-medium">
           {symbol ? `${symbol} ` : ''}{label}
         </Label>
-        <Badge variant="secondary" className="font-mono text-xs">
+        <Badge variant="secondary" className="font-mono text-xs dark:bg-slate-800">
           {value.toFixed(step < 1 ? 2 : 0)}
         </Badge>
       </div>
@@ -84,7 +84,7 @@ function StatsDisplay({ stats }: { stats: Record<string, number> }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {Object.entries(stats).map(([key, val]) => (
-        <div key={key} className="rounded-lg border bg-muted/30 p-2 text-center">
+        <div key={key} className="rounded-lg border bg-muted/30 dark:bg-slate-800/50 dark:border-slate-700 p-2 text-center">
           <div className="text-xs text-muted-foreground capitalize">{key}</div>
           <div className="text-sm font-semibold font-mono">
             {typeof val === 'number' ? (Number.isInteger(val) ? val : val.toFixed(4)) : val}
@@ -123,7 +123,7 @@ function BinomialDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="k" label={{ value: 'k (successes)', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis label={{ value: 'P(X = k)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Bar dataKey="pmf" fill={COLORS.pmf} name="PMF" />
                 </BarChart>
               </ResponsiveContainer>
@@ -143,7 +143,7 @@ function BinomialDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="k" label={{ value: 'k (successes)', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis domain={[0, 1]} label={{ value: 'P(X ≤ k)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Line type="stepAfter" dataKey="cdf" stroke={COLORS.cdf} strokeWidth={2} dot={false} name="CDF" />
                 </LineChart>
               </ResponsiveContainer>
@@ -188,7 +188,7 @@ function BernoulliDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="k" label={{ value: 'k (outcome)', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis domain={[0, 1]} label={{ value: 'P(X = k)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Bar dataKey="pmf" fill={COLORS.pmf} name="PMF" />
                 </BarChart>
               </ResponsiveContainer>
@@ -208,7 +208,7 @@ function BernoulliDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="k" label={{ value: 'k (outcome)', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis domain={[0, 1]} label={{ value: 'P(X ≤ k)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Line type="stepAfter" dataKey="cdf" stroke={COLORS.cdf} strokeWidth={2} dot={false} name="CDF" />
                 </LineChart>
               </ResponsiveContainer>
@@ -253,7 +253,7 @@ function PoissonDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="k" label={{ value: 'k (events)', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis label={{ value: 'P(X = k)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Bar dataKey="pmf" fill={COLORS.pmf} name="PMF" />
                 </BarChart>
               </ResponsiveContainer>
@@ -273,7 +273,7 @@ function PoissonDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="k" label={{ value: 'k (events)', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis domain={[0, 1]} label={{ value: 'P(X ≤ k)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Line type="stepAfter" dataKey="cdf" stroke={COLORS.cdf} strokeWidth={2} dot={false} name="CDF" />
                 </LineChart>
               </ResponsiveContainer>
@@ -310,7 +310,7 @@ function NormalDistribution() {
       </div>
 
       <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
-        <Info className="h-4 w-4 text-emerald-600 shrink-0" />
+        <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <span className="text-sm text-emerald-700 dark:text-emerald-400">
           For the Normal distribution: <strong>Mean = Median = Mode = {mu.toFixed(2)}</strong>
         </span>
@@ -329,7 +329,7 @@ function NormalDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="x" label={{ value: 'x', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis label={{ value: 'f(x)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <ReferenceLine x={mu} stroke={COLORS.cdf} strokeDasharray="5 5" label={{ value: `μ=${mu}`, position: 'top', fill: COLORS.cdf, fontSize: 11 }} />
                   <Area type="monotone" dataKey="pdf" stroke={COLORS.pdf} fill={COLORS.pdfFill} strokeWidth={2} name="PDF" />
                 </AreaChart>
@@ -350,7 +350,7 @@ function NormalDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="x" label={{ value: 'x', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis domain={[0, 1]} label={{ value: 'F(x)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <ReferenceLine x={mu} stroke={COLORS.pdf} strokeDasharray="5 5" label={{ value: `μ=${mu}`, position: 'top', fill: COLORS.pdf, fontSize: 11 }} />
                   <ReferenceLine y={0.5} stroke="#94a3b8" strokeDasharray="3 3" />
                   <Line type="monotone" dataKey="cdf" stroke={COLORS.cdf} strokeWidth={2} dot={false} name="CDF" />
@@ -397,7 +397,7 @@ function ExponentialDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="x" label={{ value: 'x', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis label={{ value: 'f(x)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Area type="monotone" dataKey="pdf" stroke={COLORS.pdf} fill={COLORS.pdfFill} strokeWidth={2} name="PDF" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -417,7 +417,7 @@ function ExponentialDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="x" label={{ value: 'x', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis domain={[0, 1]} label={{ value: 'F(x)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Line type="monotone" dataKey="cdf" stroke={COLORS.cdf} strokeWidth={2} dot={false} name="CDF" />
                 </LineChart>
               </ResponsiveContainer>
@@ -468,7 +468,7 @@ function UniformDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="x" label={{ value: 'x', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis label={{ value: 'f(x)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Area type="stepAfter" dataKey="pdf" stroke={COLORS.pdf} fill={COLORS.pdfFill} strokeWidth={2} name="PDF" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -488,7 +488,7 @@ function UniformDistribution() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="x" label={{ value: 'x', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis domain={[0, 1]} label={{ value: 'F(x)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Line type="linear" dataKey="cdf" stroke={COLORS.cdf} strokeWidth={2} dot={false} name="CDF" />
                 </LineChart>
               </ResponsiveContainer>
@@ -555,7 +555,7 @@ function EmpiricalRuleSection() {
       </div>
 
       <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
-        <Info className="h-4 w-4 text-emerald-600 shrink-0" />
+        <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <span className="text-sm text-emerald-700 dark:text-emerald-400">
           For the Normal distribution: <strong>Mean = Median = Mode = {mu.toFixed(2)}</strong>
         </span>
@@ -578,7 +578,7 @@ function EmpiricalRuleSection() {
                 <YAxis
                   label={{ value: 'f(x)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }}
                 />
-                <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                 <ReferenceLine x={mu} stroke="#374151" strokeDasharray="5 5" label={{ value: `μ`, position: 'top', fill: '#374151', fontSize: 12 }} />
                 <ReferenceLine x={mu - sigma} stroke={COLORS.sigma1} strokeDasharray="3 3" />
                 <ReferenceLine x={mu + sigma} stroke={COLORS.sigma1} strokeDasharray="3 3" />
@@ -586,7 +586,7 @@ function EmpiricalRuleSection() {
                 <ReferenceLine x={mu + 2 * sigma} stroke={COLORS.sigma2} strokeDasharray="3 3" />
                 <ReferenceLine x={mu - 3 * sigma} stroke={COLORS.sigma3} strokeDasharray="3 3" />
                 <ReferenceLine x={mu + 3 * sigma} stroke={COLORS.sigma3} strokeDasharray="3 3" />
-                <Area type="monotone" dataKey="Outside" stackId="1" stroke="#94a3b8" fill="#e2e8f0" strokeWidth={0} name="Outside 3σ" />
+                <Area type="monotone" dataKey="Outside" stackId="1" stroke="#94a3b8" fill="hsl(var(--muted))" strokeWidth={0} name="Outside 3σ" />
                 <Area type="monotone" dataKey="3σ (99.73%)" stackId="1" stroke={COLORS.sigma3} fill="#fecaca" strokeWidth={0} name="Within 3σ" />
                 <Area type="monotone" dataKey="2σ (95.45%)" stackId="1" stroke={COLORS.sigma2} fill="#fde68a" strokeWidth={0} name="Within 2σ" />
                 <Area type="monotone" dataKey="1σ (68.27%)" stackId="1" stroke={COLORS.sigma1} fill="#99f6e4" strokeWidth={0} name="Within 1σ" />
@@ -705,7 +705,7 @@ function DistConfigPanel({
   };
 
   return (
-    <Card>
+    <Card className="dark:border-slate-700">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">{label}</CardTitle>
       </CardHeader>
@@ -861,7 +861,7 @@ function DistributionComparison() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="k" label={{ value: 'k', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                   <YAxis label={{ value: 'Probability', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                  <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                  <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                   <Legend />
                   <Bar dataKey={DIST_LABELS[config1.type]} fill={COLORS.comp1} />
                   <Bar dataKey={DIST_LABELS[config2.type]} fill={COLORS.comp2} />
@@ -890,7 +890,7 @@ function DistributionComparison() {
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis dataKey="x" label={{ value: 'x', position: 'insideBottom', offset: -2, style: { fontSize: 12 } }} />
                 <YAxis label={{ value: 'Density / Probability', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 12 } }} />
-                <Tooltip formatter={(v: number) => v.toFixed(6)} />
+                <Tooltip formatter={(v: number) => v.toFixed(6)} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))', fontSize: '12px', }} />
                 <Legend />
                 <Area
                   type="monotone"
@@ -968,7 +968,7 @@ export default function ProbabilityDistributions() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-emerald-600" />
+            <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             <CardTitle>Continuous Distributions</CardTitle>
           </div>
           <CardDescription>

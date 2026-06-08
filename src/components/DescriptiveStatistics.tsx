@@ -141,7 +141,7 @@ function BoxplotChart({ summary, outliers }: { summary: ColumnSummary; outliers:
           y={center + 5}
           textAnchor="middle"
           fontSize={12}
-          fill="#6b7280"
+          className="fill-muted-foreground"
           transform={`rotate(-90, 20, ${center})`}
         >
           {summary.name}
@@ -153,7 +153,7 @@ function BoxplotChart({ summary, outliers }: { summary: ColumnSummary; outliers:
           y1={chartHeight - 20}
           x2={plotRight}
           y2={chartHeight - 20}
-          stroke="#9ca3af"
+          className="stroke-muted-foreground"
           strokeWidth={1}
         />
 
@@ -165,7 +165,7 @@ function BoxplotChart({ summary, outliers }: { summary: ColumnSummary; outliers:
               y1={chartHeight - 24}
               x2={scale(val)}
               y2={chartHeight - 16}
-              stroke="#9ca3af"
+              className="stroke-muted-foreground"
               strokeWidth={1}
             />
             <text
@@ -173,7 +173,7 @@ function BoxplotChart({ summary, outliers }: { summary: ColumnSummary; outliers:
               y={chartHeight - 5}
               textAnchor="middle"
               fontSize={10}
-              fill="#6b7280"
+              className="fill-muted-foreground"
             >
               {formatNumber(val, 2)}
             </text>
@@ -186,7 +186,7 @@ function BoxplotChart({ summary, outliers }: { summary: ColumnSummary; outliers:
           y={chartHeight + 35}
           textAnchor="middle"
           fontSize={12}
-          fill="#6b7280"
+          className="fill-muted-foreground"
         >
           Value
         </text>
@@ -540,14 +540,14 @@ export default function DescriptiveStatistics() {
               <div className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={histData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                     <XAxis
                       dataKey="midpoint"
                       label={{
                         value: `${activeNumericCol} (bin midpoint)`,
                         position: 'insideBottom',
                         offset: -15,
-                        style: { fill: '#6b7280', fontSize: 12 },
+                        style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
                       }}
                       tick={{ fontSize: 11 }}
                       tickFormatter={(val: number) =>
@@ -560,7 +560,7 @@ export default function DescriptiveStatistics() {
                         angle: -90,
                         position: 'insideLeft',
                         offset: 5,
-                        style: { fill: '#6b7280', fontSize: 12 },
+                        style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
                       }}
                       tick={{ fontSize: 11 }}
                       allowDecimals={false}
@@ -572,7 +572,9 @@ export default function DescriptiveStatistics() {
                       }
                       contentStyle={{
                         borderRadius: '8px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid hsl(var(--border))',
+                        backgroundColor: 'hsl(var(--card))',
+                        color: 'hsl(var(--card-foreground))',
                         fontSize: '12px',
                       }}
                     />
@@ -610,7 +612,7 @@ export default function DescriptiveStatistics() {
               </div>
               <div className="flex flex-wrap gap-3 mt-4 text-xs text-muted-foreground justify-center">
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-sm bg-teal-500/25 border border-teal-500" />
+                  <span className="inline-block w-3 h-3 rounded-sm bg-teal-500/25 dark:bg-teal-500/25 border border-teal-500" />
                   IQR Box (Q1–Q3)
                 </span>
                 <span className="flex items-center gap-1">
@@ -653,14 +655,14 @@ export default function DescriptiveStatistics() {
                   margin={{ top: 10, right: 20, left: 10, bottom: 50 }}
                   layout="vertical"
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                   <XAxis
                     type="number"
                     label={{
                       value: 'Frequency (count)',
                       position: 'insideBottom',
                       offset: -15,
-                      style: { fill: '#6b7280', fontSize: 12 },
+                      style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
                     }}
                     tick={{ fontSize: 11 }}
                     allowDecimals={false}
@@ -673,7 +675,7 @@ export default function DescriptiveStatistics() {
                       angle: -90,
                       position: 'insideLeft',
                       offset: 5,
-                      style: { fill: '#6b7280', fontSize: 12 },
+                      style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
                     }}
                     tick={{ fontSize: 11 }}
                     width={100}
@@ -685,7 +687,9 @@ export default function DescriptiveStatistics() {
                     formatter={(value: number) => [value, 'Count']}
                     contentStyle={{
                       borderRadius: '8px',
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid hsl(var(--border))',
+                      backgroundColor: 'hsl(var(--card))',
+                      color: 'hsl(var(--card-foreground))',
                       fontSize: '12px',
                     }}
                   />

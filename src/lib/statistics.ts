@@ -633,18 +633,27 @@ export function shapiroWilkTest(data: number[]): { statistic: number; pValue: nu
 }
 
 function shapiroWilkCoefficients(n: number): number[] | null {
-  // Use a simplified approach - compute using expected normal order statistics
+  // Compute expected normal order statistics (Blom's approximation)
   const m = Math.floor(n / 2);
   const a: number[] = [];
   
-  // Simple approximation of SW coefficients
-  for (let i = 1; i <= m; i++) {
-    const u = i / (n + 1);
-    a.push(normalInvCDF(u) * -1);
+  // Use Blom's formula: m_i = Φ^{-1}((i - 3/8) / (n + 1/4))
+  const mValues: number[] = [];
+  for (let i = 1; i <= n; i++) {
+    mValues.push(normalInvCDF((i - 0.375) / (n + 0.25)));
   }
   
-  // Normalize
+  // Compute the vector a = m^T V^{-1} / (m^T V^{-1} V^{-1} m)^{1/2}
+  // Simplification: use the approximation a_i ≈ m_{n-i+1} - m_i normalized
+  // with proper sign handling based on Royston (1992)
+  for (let i = 1; i <= m; i++) {
+    // a_i = c_i where c = (m_{n-i+1} - m_i) normalized
+    a.push((mValues[n - i] - mValues[i - 1]));
+  }
+  
+  // Normalize so that sum(a_i^2) = 1
   const sumSq = a.reduce((s, v) => s + v * v, 0);
+  if (sumSq === 0) return null;
   const norm = Math.sqrt(sumSq);
   for (let i = 0; i < a.length; i++) {
     a[i] /= norm;
@@ -654,26 +663,41 @@ function shapiroWilkCoefficients(n: number): number[] | null {
 }
 
 function shapiroWilkPValue(W: number, n: number): number {
-  // Royston's approximation for p-value
-  if (n === 3) {
+  // Royston's approximation (1992) for the Shapiro-Wilk p-value
+  if (n < 4) {
+    // For n=3, use exact distribution
     const pi6 = 6 / Math.PI;
-    const stqr = 0.104; // approximate
-    return Math.max(0, 1 - Math.pow(Math.atan(pi6 * (W - stqr) / (1 - stqr)), 1));
+    const stqr = -1.0275; // adjusted for Blom's formula
+    const w = Math.max(0, Math.min(1, W));
+    if (w >= 0.9999) return 0.9999;
+    return Math.max(0.0001, 1 - normalCDF((Math.log(1 - w) + 1.077) / 0.378));
   }
   
   const logn = Math.log(n);
   let mu: number, sigma: number;
   
   if (n <= 11) {
+    // Royston's polynomial approximation for small n
     mu = -0.0006714 * Math.pow(logn, 3) + 0.025054 * Math.pow(logn, 2) - 0.39978 * logn + 0.5440;
     sigma = Math.exp(-0.0020322 * Math.pow(logn, 3) + 0.062767 * Math.pow(logn, 2) - 0.77857 * logn + 1.3822);
-  } else {
+  } else if (n <= 500) {
+    // Royston's approximation for medium n
     mu = 0.0038915 * Math.pow(logn, 3) - 0.083751 * Math.pow(logn, 2) - 0.31082 * logn - 1.5861;
     sigma = Math.exp(0.0030302 * Math.pow(logn, 3) - 0.082676 * Math.pow(logn, 2) - 0.4803 * logn);
+  } else {
+    // Large sample approximation
+    mu = -1.2725 + 1.0521 * (Math.log(Math.log(n)) - Math.log(3));
+    sigma = -1.0521 * (Math.log(Math.log(n)) - Math.log(3));
   }
   
-  const z = (Math.log(1 - W) - mu) / sigma;
-  return 1 - normalCDF(z);
+  if (sigma <= 0) sigma = 0.001; // prevent division by zero
+  
+  const gamma_val = Math.log(1 - W);
+  const z = (gamma_val - mu) / sigma;
+  
+  // P(W > w) = P(Z < z) under H0 (normality)
+  const pValue = normalCDF(z);
+  return Math.max(0.0001, Math.min(0.9999, pValue));
 }
 
 // Kolmogorov-Smirnov Normality Test

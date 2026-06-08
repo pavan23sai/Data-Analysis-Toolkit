@@ -1,5 +1,10 @@
 # GitHub Pages Deployment Workflow
 # This workflow builds and deploys your Next.js static site to GitHub Pages
+#
+# Prerequisites:
+# 1. Go to your repo Settings > Pages
+# 2. Under "Build and deployment", set Source to "GitHub Actions"
+# 3. Push your code and this workflow will automatically deploy
 
 name: Deploy to GitHub Pages
 
@@ -32,10 +37,15 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build static site
-        run: bun run build
+      - name: Build static export
+        env:
+          # IMPORTANT: Replace 'data-analysis-toolkit' with your actual repo name
+          # If your repo URL is github.com/username/my-cool-tool, use "my-cool-tool"
+          # For username.github.io sites, remove or leave empty
+          NEXT_PUBLIC_REPO_NAME: ${{ github.event.repository.name }}
+        run: bun run build:static
 
-      - name: Add .nojekyll file
+      - name: Add .nojekyll
         run: touch out/.nojekyll
 
       - name: Upload artifact

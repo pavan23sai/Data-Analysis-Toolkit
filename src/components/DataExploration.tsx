@@ -389,21 +389,27 @@ export default function DataExploration() {
     setInsightsError(null);
 
     try {
-      const response = await fetch('/api/insights', {
+      const basePath = process.env.NEXT_PUBLIC_REPO_NAME ? `/${process.env.NEXT_PUBLIC_REPO_NAME}` : '';
+      const response = await fetch(`${basePath}/api/insights`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ summary }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ error: 'Failed to generate insights' }));
         throw new Error(data.error || 'Failed to generate insights');
       }
 
       const data = await response.json();
       setInsightsText(data.insights);
     } catch (err) {
-      setInsightsError(err instanceof Error ? err.message : 'Failed to generate insights');
+      const msg = err instanceof Error ? err.message : 'Failed to generate insights';
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('404')) {
+        setInsightsError('AI Insights requires a server backend. This feature is not available on static hosting (GitHub Pages). Run the app locally with `bun run dev` to use AI Insights.');
+      } else {
+        setInsightsError(msg);
+      }
     } finally {
       setInsightsLoading(false);
     }

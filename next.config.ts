@@ -1,13 +1,16 @@
 import type { NextConfig } from "next";
 
+const repoName = process.env.NEXT_PUBLIC_REPO_NAME || "";
+
 const nextConfig: NextConfig = {
   // Use "export" for GitHub Pages static site deployment
   // Use "standalone" for regular server deployment
   output: "export",
 
-  // If deploying to GitHub Pages with a repo subdirectory (e.g., username.github.io/repo-name),
-  // uncomment and set basePath to your repo name:
-  // basePath: "/your-repo-name",
+  // GitHub Pages basePath: set NEXT_PUBLIC_REPO_NAME env var to your repo name
+  // e.g. if your repo is "username/my-data-toolkit", set it to "my-data-toolkit"
+  // For username.github.io (org site), leave it empty
+  ...(repoName ? { basePath: `/${repoName}` } : {}),
 
   // Static export doesn't support image optimization
   images: {

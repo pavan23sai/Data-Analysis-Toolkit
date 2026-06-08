@@ -778,7 +778,7 @@ export default function DescriptiveStatistics() {
     return numericColumns.map((col) => {
       const data = getColumnData(col);
       if (data.length === 0) {
-        return { name: col, count: 0, mean: NaN, stdDev: NaN, min: NaN, median: NaN, max: NaN, skewness: NaN };
+        return { name: col, count: 0, mean: NaN, stdDev: NaN, min: NaN, median: NaN, max: NaN, skewness: NaN, kurtosis: NaN };
       }
       const s = computeColumnSummary(col, data);
       return {
@@ -790,6 +790,7 @@ export default function DescriptiveStatistics() {
         median: s.median,
         max: s.max,
         skewness: s.skewness,
+        kurtosis: s.kurtosis,
       };
     });
   }, [numericColumns, dataset, getColumnData]);
@@ -1773,6 +1774,63 @@ export default function DescriptiveStatistics() {
                 <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white dark:border-slate-900" />
                 Sample Mean
               </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Distribution Shape Comparison — across all numeric columns */}
+      {allColumnSummaries.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Activity className="h-4 w-4 text-teal-600 shrink-0" />
+              Distribution Shape Comparison
+            </CardTitle>
+            <CardDescription>
+              Compare distribution shapes across all numeric variables at a glance
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allColumnSummaries.map((s) => {
+                const shape = classifyDistribution(s.skewness, s.kurtosis);
+                const shapeConfig = SHAPE_CONFIG[shape];
+                return (
+                  <div
+                    key={s.name}
+                    className={`rounded-xl border p-4 transition-all duration-200 hover:shadow-md cursor-default ${
+                      s.name === activeNumericCol ? 'ring-2 ring-teal-500/30 border-teal-300 dark:border-teal-700' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0">
+                        <DistributionCurveSVG shape={shape} color={shapeConfig.svgColor} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-foreground truncate">{s.name}</span>
+                          <Badge className={`text-[9px] px-1.5 py-0 ${shapeConfig.badgeClass}`}>
+                            {shape}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                          <span className="text-muted-foreground">Mean</span>
+                          <span className="font-mono text-right">{formatNumber(s.mean)}</span>
+                          <span className="text-muted-foreground">StdDev</span>
+                          <span className="font-mono text-right">{formatNumber(s.stdDev)}</span>
+                          <span className="text-muted-foreground">Skew</span>
+                          <span className={`font-mono text-right ${Math.abs(s.skewness) > 0.5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            {formatNumber(s.skewness)}
+                          </span>
+                          <span className="text-muted-foreground">Range</span>
+                          <span className="font-mono text-right">{formatNumber(s.max - s.min)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

@@ -68,3 +68,51 @@
 - AI Insights feature gracefully degrades on static hosting - shows error message instead of crashing
 - All client-side features (CSV upload, statistics, charts, tests) work perfectly on GitHub Pages
 - The `NEXT_PUBLIC_REPO_NAME` env var must match your GitHub repo name for correct asset paths
+
+---
+
+### Task 7: QA Testing & Bug Fixes + Feature Enhancements
+- **Date**: 2025-06-09
+- **QA Method**: Automated browser testing with agent-browser + VLM visual analysis
+
+**QA Results (All 8 tabs tested):**
+- ✅ Data Upload: Working correctly, sample data loads, pagination & search work
+- ✅ Data Exploration: All sections render correctly, AI Insights gracefully degrades
+- ✅ Descriptive Statistics: All charts (histogram, boxplot, violin, correlation, scatter) render, statistics compute correctly
+- ✅ Probability Distributions: Calculator works, interactive visualizations render
+- ✅ Normality Testing: QQ-plot, histogram with normal overlay, test results all render correctly
+- ✅ Z-Score & CLT: Calculator works, CLT simulation runs and produces correct histogram
+- ✅ Parametric Tests: One-sample t-test runs correctly, results display with Cohen's d
+- ✅ Non-Parametric Tests: Mann-Whitney U test runs correctly, effect sizes display
+- ✅ Dark/Light mode toggle: Both modes render correctly with proper contrast
+- ✅ Keyboard shortcuts (Alt+1-8): Working correctly
+
+**Bugs Fixed:**
+1. Section numbering in Probability Distributions tab: "Section 3" → "Section 4" (it's the 4th tab)
+2. Section numbering in Non-Parametric Tests tab: "Section 7" → "Section 8" (it's the 8th tab)
+3. Missing `kurtosis` field in `allColumnSummaries` data structure (needed for `classifyDistribution`)
+
+**New Features Added:**
+1. **Data Health Dashboard** (Data Exploration tab):
+   - SVG ring chart showing health score (0-100)
+   - Missing values count with "Clean"/"Needs Fix" badge
+   - Duplicate rows count with "Unique"/"Has Duplicates" badge
+   - Column types breakdown (numeric vs categorical)
+   - Numeric column quick stats with mini progress bars showing mean position
+   - Skewness warnings highlighted in amber when > 0.5
+
+2. **Distribution Shape Comparison** (Descriptive Statistics tab):
+   - Grid of mini distribution curve SVGs for each numeric column
+   - Shape classification badge (Normal, Right-Skewed, Left-Skewed, Uniform)
+   - Quick stats (Mean, StdDev, Skew, Range) for each column
+   - Visual highlighting of currently selected column
+   - Color-coded skewness values (amber if > 0.5, green otherwise)
+
+**Files Modified:**
+- `src/components/ProbabilityDistributions.tsx`: Fixed section number
+- `src/components/NonParametricTests.tsx`: Fixed section number
+- `src/components/DataExploration.tsx`: Added Data Health Dashboard with health score ring, stats cards, and numeric column quick stats
+- `src/components/DescriptiveStatistics.tsx`: Added Distribution Shape Comparison card, added kurtosis to allColumnSummaries
+
+**Lint**: All passing, no errors
+**Dev server**: Running correctly on port 3000

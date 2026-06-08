@@ -27,6 +27,7 @@ import {
   Loader2,
   RefreshCw,
   BrainCircuit,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   Card,
@@ -625,6 +626,39 @@ export default function DataExploration() {
     ];
   }, [outlierResult]);
 
+  // Compute data health score (before early return to avoid conditional hook call)
+  const healthScore = useMemo(() => {
+    if (!dataset || dataset.rows.length === 0) return 0;
+    let score = 100;
+    // Deduct for missing values
+    const missingPct = totalMissing / (dataset.rows.length * dataset.headers.length);
+    score -= missingPct * 40; // up to 40 points for missing
+    // Deduct for duplicates
+    if (duplicateResult && duplicateResult.duplicateCount > 0) {
+      const dupPct = duplicateResult.duplicateCount / dataset.rows.length;
+      score -= dupPct * 30; // up to 30 points for duplicates
+    }
+    return Math.max(0, Math.round(score));
+  }, [dataset, totalMissing, duplicateResult]);
+
+  // Numeric column quick summary data for sparklines (before early return)
+  const numericQuickStats = useMemo(() => {
+    if (!dataset || dataset.rows.length === 0) return [];
+    return numericCols.map((col) => {
+      const data = getColumnData(col);
+      if (data.length === 0) return null;
+      const colSummary = computeColumnSummary(col, data);
+      return {
+        name: col,
+        mean: colSummary.mean,
+        stdDev: colSummary.stdDev,
+        min: colSummary.min,
+        max: colSummary.max,
+        skewness: colSummary.skewness,
+      };
+    }).filter(Boolean);
+  }, [dataset, numericCols, getColumnData]);
+
   if (!dataset || dataset.rows.length === 0) {
     return (
       <Card className="border-dashed">
@@ -643,6 +677,143 @@ export default function DataExploration() {
 
   return (
     <div className="space-y-6">
+      {/* ===== Data Health Dashboard ===== */}
+      <Card className="overflow-hidden">
+        <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500" />
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center size-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm">
+              <ShieldCheck className="size-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Data Health Dashboard
+                <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-mono shrink-0 ${
+                  healthScore >= 90
+                    ? 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
+                    : healthScore >= 70
+                      ? 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30'
+                      : 'border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30'
+                }`}>
+                  {healthScore}/100
+                </Badge>
+              </CardTitle>
+              <CardDescription>Quick overview of your dataset&apos;s quality and composition</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Health Score Ring */}
+            <div className="rounded-lg border bg-muted/30 dark:bg-slate-800/50 p-3 flex flex-col items-center justify-center">
+              <svg viewBox="0 0 80 80" className="w-16 h-16">
+                <circle cx="40" cy="40" r="32" fill="none" stroke="currentColor" strokeWidth="6" className="text-slate-200 dark:text-slate-700" />
+                <circle
+                  cx="40" cy="40" r="32" fill="none"
+                  stroke={healthScore >= 90 ? '#10b981' : healthScore >= 70 ? '#f59e0b' : '#f43f5e'}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(healthScore / 100) * 201} 201`}
+                  transform="rotate(-90 40 40)"
+                  className="transition-all duration-700"
+                />
+                <text x="40" y="36" textAnchor="middle" fontSize="18" fontWeight="700" className="fill-foreground">{healthScore}</text>
+                <text x="40" y="50" textAnchor="middle" fontSize="8" className="fill-muted-foreground">/100</text>
+              </svg>
+              <span className="text-xs font-medium text-muted-foreground mt-1">Health Score</span>
+            </div>
+
+            {/* Missing Values */}
+            <div className="rounded-lg border bg-muted/30 dark:bg-slate-800/50 p-3 flex flex-col items-center justify-center">
+              <div className={`text-2xl font-bold ${noMissing ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                {totalMissing}
+              </div>
+              <span className="text-xs font-medium text-muted-foreground mt-0.5">Missing Values</span>
+              <Badge variant="outline" className={`mt-1 text-[9px] px-1.5 py-0 ${
+                noMissing
+                  ? 'border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400'
+                  : 'border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400'
+              }`}>
+                {noMissing ? 'Clean' : 'Needs Fix'}
+              </Badge>
+            </div>
+
+            {/* Duplicates */}
+            <div className="rounded-lg border bg-muted/30 dark:bg-slate-800/50 p-3 flex flex-col items-center justify-center">
+              <div className={`text-2xl font-bold ${noDuplicates ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                {duplicateResult?.duplicateCount ?? 0}
+              </div>
+              <span className="text-xs font-medium text-muted-foreground mt-0.5">Duplicate Rows</span>
+              <Badge variant="outline" className={`mt-1 text-[9px] px-1.5 py-0 ${
+                noDuplicates
+                  ? 'border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400'
+                  : 'border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400'
+              }`}>
+                {noDuplicates ? 'Unique' : 'Has Duplicates'}
+              </Badge>
+            </div>
+
+            {/* Column Types */}
+            <div className="rounded-lg border bg-muted/30 dark:bg-slate-800/50 p-3 flex flex-col items-center justify-center">
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg font-bold text-teal-600 dark:text-teal-400">{numericCols.length}</span>
+                <span className="text-xs text-muted-foreground">num</span>
+                <span className="text-xs text-muted-foreground">/</span>
+                <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{dataset.headers.length - numericCols.length}</span>
+                <span className="text-xs text-muted-foreground">cat</span>
+              </div>
+              <span className="text-xs font-medium text-muted-foreground mt-0.5">Column Types</span>
+              <Badge variant="outline" className="mt-1 text-[9px] px-1.5 py-0 border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-400">
+                {dataset.headers.length} total
+              </Badge>
+            </div>
+          </div>
+
+          {/* Numeric column mini-bars */}
+          {numericQuickStats.length > 0 && (
+            <div className="mt-4 pt-3 border-t dark:border-slate-700">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Ruler className="size-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Numeric Column Quick Stats</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {numericQuickStats.map((stat) => {
+                  if (!stat) return null;
+                  const range = stat.max - stat.min || 1;
+                  const meanPct = ((stat.mean - stat.min) / range) * 100;
+                  return (
+                    <div key={stat.name} className="rounded-md border bg-background/50 p-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-foreground truncate">{stat.name}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          μ={stat.mean.toFixed(1)} σ={stat.stdDev.toFixed(1)}
+                        </span>
+                      </div>
+                      <div className="relative h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-teal-400 to-emerald-400 dark:from-teal-600 dark:to-emerald-600 rounded-full"
+                          style={{ width: `${Math.min(100, Math.max(5, meanPct))}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[9px] text-muted-foreground font-mono">{stat.min.toFixed(1)}</span>
+                        <span className={`text-[9px] font-mono ${
+                          Math.abs(stat.skewness) > 0.5
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
+                        }`}>
+                          skew={stat.skewness.toFixed(2)}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground font-mono">{stat.max.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* ===== AI Data Insights ===== */}
       <div ref={insightsRef} id="ai-insights-card">
         <Card className="overflow-hidden">

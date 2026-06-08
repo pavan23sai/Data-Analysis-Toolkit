@@ -1656,7 +1656,7 @@ export default function ProbabilityDistributions() {
           <BarChart3 className="h-5 w-5 shrink-0" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Section 3: Probability Distributions</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Section 4: Probability Distributions</h2>
           <p className="text-muted-foreground text-sm">
             Interactive exploration of discrete and continuous probability distributions
           </p>

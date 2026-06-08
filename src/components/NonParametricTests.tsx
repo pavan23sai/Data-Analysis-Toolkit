@@ -1035,7 +1035,7 @@ export default function NonParametricTests() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="size-5 text-teal-600 dark:text-teal-400 shrink-0" />
-            Section 7 — Non-parametric Tests
+            Section 8 — Non-Parametric Tests
           </CardTitle>
           <CardDescription>
             Statistical tests for data that does not follow a normal distribution. Choose a test

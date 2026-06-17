@@ -15,10 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Data Analysis Toolkit - Statistical Analysis Made Simple",
-  description: "A comprehensive Data Analysis Toolkit for exploring data, computing descriptive statistics, visualizing probability distributions, and performing statistical inference including hypothesis testing and normality testing.",
+  title: "DataVista Analytics - Statistical Analysis Made Simple",
+  description: "A comprehensive DataVista Analytics for exploring data, computing descriptive statistics, visualizing probability distributions, and performing statistical inference including hypothesis testing and normality testing.",
   keywords: ["Data Analysis", "Statistics", "Hypothesis Testing", "Probability Distributions", "Normality Testing", "ANOVA", "T-Test", "Chi-Square"],
-  authors: [{ name: "Data Analysis Toolkit" }],
+  authors: [{ name: "DataVista Analytics" }],
 };
 
 export default function RootLayout({

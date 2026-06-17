@@ -188,7 +188,7 @@ export default function Home() {
     const lines: string[] = [];
 
     lines.push('========================================');
-    lines.push('  Data Analysis Toolkit — Full Report');
+    lines.push('  DataVista Analytics — Full Report');
     lines.push('========================================');
     lines.push(`Generated: ${new Date().toLocaleString()}`);
     lines.push('');
@@ -347,7 +347,7 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Data Analysis Toolkit</h1>
+                    <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">DataVista Analytics</h1>
                     <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-mono border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 shrink-0">
                       v1.0
                     </Badge>
@@ -553,7 +553,7 @@ export default function Home() {
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
                   <BookOpen className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Data Analysis Toolkit</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">DataVista Analytics</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-300 leading-relaxed">
                 A comprehensive statistical analysis toolkit for data exploration, hypothesis testing, and probability distributions.
@@ -593,7 +593,7 @@ export default function Home() {
 
           <div className="flex items-center justify-center">
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              © {new Date().getFullYear()} Data Analysis Toolkit — Course Assignment
+              © {new Date().getFullYear()} DataVista Analytics — Explore • Visualize • Transform • Understand Data
             </p>
           </div>
         </div>

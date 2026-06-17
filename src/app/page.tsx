@@ -393,7 +393,7 @@ export default function Home() {
 </a>
 
 <a
-  href="/UserGuide.pdf"
+  href="/guide"
   target="_blank"
   rel="noopener noreferrer"
 >

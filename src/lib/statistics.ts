@@ -175,7 +175,7 @@ export function histogramData(data: number[], bins?: number): { binStart: number
   const maxVal = Math.max(...data);
   const binWidth = (maxVal - minVal) / numBins || 1;
   
-  const result = [];
+  const result: { binStart: number; binEnd: number; frequency: number; midpoint: number }[] = [];
   for (let i = 0; i < numBins; i++) {
     const binStart = minVal + i * binWidth;
     const binEnd = binStart + binWidth;

@@ -163,3 +163,52 @@
 **Files Deleted:**
 - `public/logo.svg`
 - `src/app/api/insights/route.ts`
+
+---
+
+### Task 9: Vercel-Ready Cleanup + Fix All TypeScript Errors
+- **Date**: 2025-06-10
+- **Goal**: Ensure project runs error-free in VS Code, pushes to Git, and deploys to Vercel without any errors
+
+**Vercel Build Blockers Fixed:**
+1. **Deleted `src/app/api/route.ts`** (unused "Hello, world!" route) — this was blocking `next build` because `output: "export"` (static export) doesn't support API routes. Without this fix, Vercel build would fail.
+2. **Removed `z-ai-web-dev-sdk`** from `package.json` dependencies (was only used by the deleted AI Insights route). Ran `bun install` to update `bun.lock` and remove from `node_modules`.
+3. **Fixed `build` script** in `package.json`: was `"next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/"` (broken — references `.next/standalone` which doesn't exist with `output: "export"`). Changed to clean `"next build"`.
+4. **Fixed `build:static` script**: was `"mv src/app/api src/app/_api_backup && next build && mv src/app/_api_backup src/app/api"` (references deleted api folder). Simplified to `"next build"`.
+5. **Simplified `dev` script**: removed `2>&1 | tee dev.log` (sandbox-specific) → clean `"next dev -p 3000"`.
+6. **Simplified `start` script**: was `bun .next/standalone/server.js` (standalone mode) → `"next start"` (standard).
+
+**TypeScript Errors Fixed (tsc --noEmit now passes with 0 errors):**
+1. **`src/lib/statistics.ts` line 178**: `const result = []` inferred as `never[]` → added explicit type `const result: { binStart: number; binEnd: number; frequency: number; midpoint: number }[] = []`.
+2. **`src/components/ProbabilityDistributions.tsx`**: 
+   - Root cause: `params` state was typed as `CalcParams['normal']` (just `{mu, sigma}`) but holds different distribution params at runtime → all `as CalcParams['xxx']` casts failed TS2352 overlap check.
+   - Fix: Added `type AnyCalcParams = CalcParams[keyof CalcParams]` (union of all param shapes), changed state type to `AnyCalcParams`, updated `setParams` calls with proper casts. Now all narrowing casts are valid (union → member).
+   - Also fixed 3 `const data = []` → `const data: { x: number; pdf: number; cdf: number }[] = []` (same `never[]` pattern, previously masked by the cast errors).
+3. **`tsconfig.json`**: Added `examples`, `skills`, `agent-ctx`, `.next` to `exclude` (these folders had pre-existing errors unrelated to the app and aren't part of the build). Removed stale `.next/types` from `include`.
+
+**Final Verification (ALL PASS):**
+- ✅ `bun run lint` (ESLint): zero errors
+- ✅ `npx tsc --noEmit` (TypeScript): exit code 0, zero errors
+- ✅ `bun run build` (production build, simulates Vercel): exit code 0, static page generated
+- ✅ `bun run dev`: HTTP 200, compiles cleanly
+- ✅ agent-browser QA: no Z logo/favicon in HTML head, zero AI Insights references, Export All + Theme toggle work, Data Exploration shows Data Health Dashboard (no AI card), Probability Distributions calculator works (TS fix verified)
+- ✅ Source grep: ZERO references to z-cdn/logo.svg/z-ai-web-dev-sdk/ai-insights/BrainCircuit in `src/`
+- ✅ `public/` folder: only `robots.txt` + `toolkit-screenshot.png` (no logo.svg)
+- ✅ `package.json`: no `z-ai-web-dev-sdk` dependency
+
+**Files Modified:**
+- `package.json`: removed z-ai-web-dev-sdk, fixed build/dev/start/build:static scripts
+- `tsconfig.json`: added excludes for non-app folders, cleaned include
+- `src/lib/statistics.ts`: fixed `never[]` type inference in `histogramData`
+- `src/components/ProbabilityDistributions.tsx`: added `AnyCalcParams` union type, fixed `params` state typing, fixed 3 `never[]` array declarations
+
+**Files Deleted:**
+- `src/app/api/route.ts` (unused hello-world route, blocked static export)
+
+**Deployment Instructions for User (VS Code → Git → Vercel):**
+1. Open project in VS Code
+2. Run `npm install` (or `bun install`) to install dependencies
+3. Run `npm run dev` (or `bun run dev`) for local development → http://localhost:3000
+4. Push to GitHub: `git init && git add . && git commit -m "Data Analysis Toolkit" && git push`
+5. On Vercel: Import the GitHub repo → Vercel auto-detects Next.js → Deploy (build command `next build` runs automatically, no config needed)
+6. The `output: "export"` setting produces a static site that Vercel serves via CDN — fast and free

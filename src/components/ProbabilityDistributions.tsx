@@ -82,6 +82,9 @@ interface CalcParams {
   fDist: { d1: number; d2: number };
 }
 
+// Union of all distribution parameter shapes (used by the calculator state)
+type AnyCalcParams = CalcParams[keyof CalcParams];
+
 const CALC_DIST_LABELS: Record<CalcDistType, string> = {
   normal: 'Normal',
   binomial: 'Binomial',
@@ -118,7 +121,7 @@ const DEFAULT_PARAMS: CalcParams = {
 // ==================== PROBABILITY CALCULATOR ====================
 function ProbabilityCalculator({ onFillFromRef }: { onFillFromRef?: (dist: CalcDistType, params: Record<string, number>) => void }) {
   const [distType, setDistType] = useState<CalcDistType>('normal');
-  const [params, setParams] = useState<CalcParams['normal']>(DEFAULT_PARAMS.normal);
+  const [params, setParams] = useState<AnyCalcParams>(DEFAULT_PARAMS.normal);
   const [calcMode, setCalcMode] = useState<CalcMode>('le');
   const [xValue, setXValue] = useState<string>('1');
   const [x1Value, setX1Value] = useState<string>('-1');
@@ -126,12 +129,12 @@ function ProbabilityCalculator({ onFillFromRef }: { onFillFromRef?: (dist: CalcD
   const [computedResult, setComputedResult] = useState<number | null>(null);
 
   const updateParam = useCallback((key: string, value: number) => {
-    setParams((prev) => ({ ...prev, [key]: value }));
+    setParams((prev) => ({ ...prev, [key]: value }) as AnyCalcParams);
   }, []);
 
   const handleDistChange = useCallback((newType: CalcDistType) => {
     setDistType(newType);
-    setParams(DEFAULT_PARAMS[newType] as Record<string, number>);
+    setParams(DEFAULT_PARAMS[newType]);
     setComputedResult(null);
     // Set sensible default x values
     switch (newType) {
@@ -149,7 +152,7 @@ function ProbabilityCalculator({ onFillFromRef }: { onFillFromRef?: (dist: CalcD
   // Expose handleDistChange for ref card clicks
   const fillFromRef = useCallback((dist: CalcDistType, newParams: Record<string, number>) => {
     setDistType(dist);
-    setParams(newParams);
+    setParams(newParams as AnyCalcParams);
     setComputedResult(null);
     switch (dist) {
       case 'normal': setXValue('1'); setX1Value('-1'); setX2Value('1'); break;
@@ -286,7 +289,7 @@ function ProbabilityCalculator({ onFillFromRef }: { onFillFromRef?: (dist: CalcD
         const { k } = params as CalcParams['chiSquare'];
         const minVal = 0;
         const maxVal = Math.max(k + 4 * Math.sqrt(2 * k), 10);
-        const data = [];
+        const data: { x: number; pdf: number; cdf: number }[] = [];
         for (let i = 0; i <= 100; i++) {
           const x = minVal + (maxVal - minVal) * i / 100;
           data.push({ x: Math.round(x * 100) / 100, pdf: chiSquarePDF(x, k), cdf: chiSquareCDF(x, k) });
@@ -296,7 +299,7 @@ function ProbabilityCalculator({ onFillFromRef }: { onFillFromRef?: (dist: CalcD
       case 'tDist': {
         const { df } = params as CalcParams['tDist'];
         const range = Math.max(3, 3 + df * 0.1);
-        const data = [];
+        const data: { x: number; pdf: number; cdf: number }[] = [];
         for (let i = 0; i <= 100; i++) {
           const x = -range + 2 * range * i / 100;
           data.push({ x: Math.round(x * 100) / 100, pdf: tPDF(x, df), cdf: tCDF(x, df) });
@@ -306,7 +309,7 @@ function ProbabilityCalculator({ onFillFromRef }: { onFillFromRef?: (dist: CalcD
       case 'fDist': {
         const { d1, d2 } = params as CalcParams['fDist'];
         const maxVal = Math.min(10, Math.max(3, (d1 * d2) / (d2 - 2)));
-        const data = [];
+        const data: { x: number; pdf: number; cdf: number }[] = [];
         for (let i = 0; i <= 100; i++) {
           const x = 0.01 + maxVal * i / 100;
           data.push({ x: Math.round(x * 100) / 100, pdf: fPDF(x, d1, d2), cdf: fCDF(x, d1, d2) });

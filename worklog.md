@@ -116,3 +116,50 @@
 
 **Lint**: All passing, no errors
 **Dev server**: Running correctly on port 3000
+
+---
+
+### Task 8: Remove Z Logo & AI Powered Insights Feature
+- **Date**: 2025-06-10
+- **Scope**: Complete removal of Z branding/logo and the entire AI Powered Insights feature
+
+**Z Logo Removal:**
+1. Deleted `public/logo.svg` (Z logo asset file)
+2. Removed `icons` metadata block from `src/app/layout.tsx` (was pointing to `https://z-cdn.chatglm.cn/z-ai/static/logo.svg` favicon)
+3. Verified no `link[rel*=icon]` or logo reference tags remain in rendered HTML head
+
+**AI Powered Insights Feature Removal:**
+1. Deleted `src/app/api/insights/route.ts` (API route using `z-ai-web-dev-sdk`)
+2. Removed "AI Insights" button from header in `src/app/page.tsx` (was scrolling to `#ai-insights-card`)
+3. Removed `Sparkles` import from `page.tsx` (only used by the AI Insights button)
+4. Removed entire AI Data Insights card/section from `src/components/DataExploration.tsx` (JSX block with "AI-Powered Insights" title, "Generate Insights" button, "Regenerate" button, loading skeleton, error state, empty state)
+5. Removed all AI Insights state: `insightsText`, `insightsLoading`, `insightsError`, `insightsRef`
+6. Removed all AI Insights functions: `buildDatasetSummary`, `handleGenerateInsights`, `renderInlineMarkdown`, `renderInsightsMarkdown`
+7. Removed the `fetch('/api/insights')` API call
+8. Cleaned up now-unused imports: `useRef` (react), `Sparkles`/`Loader2`/`RefreshCw`/`BrainCircuit` (lucide-react), `correlation`/`skewness`/`kurtosis` (statistics)
+
+**Preserved (NOT changed, per user request):**
+- ✅ "Export All" button and full export report functionality
+- ✅ Data Health Dashboard (health score ring, missing values, duplicates, column types, quick stats)
+- ✅ All 8 statistics tabs and their tools
+- ✅ Theme toggle, keyboard shortcuts, back-to-top, statistical glossary
+- ✅ Header BarChart3 app icon (not a Z logo — app's own branding)
+
+**Verification Results:**
+- ✅ `bun run lint`: Passed with zero errors
+- ✅ agent-browser QA: Page renders HTTP 200, no console errors
+- ✅ Header contains only "Export All" + "Toggle theme" buttons (no AI Insights button)
+- ✅ Data Exploration tab shows Data Health Dashboard → Data Type Detection → Missing Value Analysis (no AI-Powered Insights card)
+- ✅ Grep for `z-cdn|logo.svg|ai-insights|insightsText|Generate Insights|AI-Powered|BrainCircuit` in `src/`: ZERO matches
+- ✅ HTML head: NO logo/favicon link tags found
+- ✅ Export All button clicked successfully (still functional)
+- ✅ File reduced: DataExploration.tsx 1729 → 1399 lines (330 lines of AI Insights code removed)
+
+**Files Modified:**
+- `src/app/layout.tsx`: Removed Z logo favicon from metadata
+- `src/app/page.tsx`: Removed Sparkles import + AI Insights header button
+- `src/components/DataExploration.tsx`: Removed AI Insights JSX card + logic + cleaned imports
+
+**Files Deleted:**
+- `public/logo.svg`
+- `src/app/api/insights/route.ts`

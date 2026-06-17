@@ -33,7 +33,6 @@ import {
   Tag,
   Info,
   ArrowUp,
-  Sparkles,
 } from 'lucide-react';
 import StatisticalGlossary from '@/components/StatisticalGlossary';
 import { Badge } from '@/components/ui/badge';
@@ -368,23 +367,6 @@ export default function Home() {
                   No data loaded
                 </Badge>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  handleSectionChange('exploration');
-                  setTimeout(() => {
-                    const el = document.getElementById('ai-insights-card');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 300);
-                }}
-                disabled={!dataset}
-                className="gap-1.5 text-teal-700 border-teal-300 hover:bg-teal-50 hover:scale-105 hover:shadow-md active:scale-95 dark:text-teal-300 dark:border-teal-700 dark:hover:bg-teal-950/50 disabled:opacity-40 disabled:cursor-not-allowed shrink-0 transition-all duration-200"
-                aria-label="AI Insights"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">AI Insights</span>
-              </Button>
               <Button
                 variant="outline"
                 size="sm"

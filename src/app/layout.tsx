@@ -19,9 +19,6 @@ export const metadata: Metadata = {
   description: "A comprehensive Data Analysis Toolkit for exploring data, computing descriptive statistics, visualizing probability distributions, and performing statistical inference including hypothesis testing and normality testing.",
   keywords: ["Data Analysis", "Statistics", "Hypothesis Testing", "Probability Distributions", "Normality Testing", "ANOVA", "T-Test", "Chi-Square"],
   authors: [{ name: "Data Analysis Toolkit" }],
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-  },
 };
 
 export default function RootLayout({

@@ -378,6 +378,33 @@ export default function Home() {
                 <Download className="h-4 w-4 transition-transform duration-200 group-hover:animate-bounce" />
                 <span className="hidden sm:inline">Export All</span>
               </Button>
+              <a
+  href="https://github.com/pavan23sai/Data-Analysis-Toolkit"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <Button
+    variant="outline"
+    size="sm"
+    className="gap-1.5"
+  >
+    ⭐ GitHub
+  </Button>
+</a>
+
+<a
+  href="/UserGuide.pdf"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <Button
+    variant="outline"
+    size="sm"
+    className="gap-1.5"
+  >
+    📘 User Guide
+  </Button>
+</a>
               <ThemeToggle />
             </div>
           </div>
